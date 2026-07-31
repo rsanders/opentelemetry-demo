@@ -1,0 +1,46 @@
+---
+- name: Ensure repo destination directory exists
+  ansible.builtin.file:
+    path: "{{ repo_dest }}"
+    state: directory
+    owner: ec2-user
+    group: ec2-user
+    mode: "0755"
+
+- name: Sync repository to the instance
+  ansible.posix.synchronize:
+    src: "{{ playbook_dir }}/../../../"
+    dest: "{{ repo_dest }}"
+    delete: true
+    rsync_opts:
+      - "--exclude=.git"
+      - "--exclude=deploy/aws/terraform/.terraform"
+      - "--exclude=**/node_modules"
+      - "--exclude=**/.next"
+      - "--exclude=**/target"
+      - "--exclude=**/__pycache__"
+  become: false
+
+- name: Render AWS exporters into the collector's extras seam
+  ansible.builtin.template:
+    src: otelcol-config-extras-aws.yml.j2
+    dest: "{{ repo_dest }}/src/otel-collector/otelcol-config-extras.yml"
+    owner: ec2-user
+    group: ec2-user
+    mode: "0644"
+
+- name: Pull compose images
+  ansible.builtin.shell: "docker compose {{ compose_file_flags[compose_profile] }} pull"
+  args:
+    chdir: "{{ repo_dest }}"
+  become_user: ec2-user
+  environment:
+    HOME: /home/ec2-user
+
+- name: Start the demo stack
+  ansible.builtin.shell: "docker compose {{ compose_file_flags[compose_profile] }} up -d --remove-orphans"
+  args:
+    chdir: "{{ repo_dest }}"
+  become_user: ec2-user
+  environment:
+    HOME: /home/ec2-user

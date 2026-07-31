@@ -1,0 +1,35 @@
+---
+- name: Install Docker Engine and supporting packages (Amazon Linux 2023 repo)
+  ansible.builtin.dnf:
+    name:
+      - docker
+      - git
+      - rsync
+    state: present
+
+- name: Ensure Docker CLI plugin directory exists
+  ansible.builtin.file:
+    path: /usr/local/lib/docker/cli-plugins
+    state: directory
+    mode: "0755"
+
+- name: Install docker compose plugin binary
+  ansible.builtin.get_url:
+    url: "https://github.com/docker/compose/releases/download/{{ docker_compose_plugin_version }}/docker-compose-linux-x86_64"
+    dest: /usr/local/lib/docker/cli-plugins/docker-compose
+    mode: "0755"
+
+- name: Enable and start Docker
+  ansible.builtin.systemd:
+    name: docker
+    enabled: true
+    state: started
+
+- name: Add ec2-user to the docker group
+  ansible.builtin.user:
+    name: ec2-user
+    groups: docker
+    append: true
+
+- name: Reset connection to pick up docker group membership
+  ansible.builtin.meta: reset_connection

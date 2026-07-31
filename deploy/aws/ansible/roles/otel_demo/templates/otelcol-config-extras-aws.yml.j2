@@ -1,0 +1,29 @@
+# Rendered by Ansible (roles/otel_demo) from otelcol-config-extras-aws.yml.j2.
+# Overwrites the upstream stub at src/otel-collector/otelcol-config-extras.yml,
+# which is the repo's documented seam for adding exporters without touching
+# upstream files. This file is always loaded last on top of otelcol-config.yml,
+# so it only needs to repeat the *exporters* arrays it wants to keep (map keys
+# merge; only conflicting array keys are replaced) -- see the comment in the
+# original stub for details.
+
+exporters:
+  awsxray:
+    region: {{ aws_region }}
+  awsemf:
+    region: {{ aws_region }}
+    namespace: OtelDemo
+    log_group_name: '{{ otelcol_log_group }}'
+    log_stream_name: 'metrics'
+  awscloudwatchlogs:
+    region: {{ aws_region }}
+    log_group_name: '{{ app_log_group }}'
+    log_stream_name: 'otel-collector'
+
+service:
+  pipelines:
+    traces:
+      exporters: [debug, span_metrics, awsxray]
+    metrics:
+      exporters: [debug, awsemf]
+    logs:
+      exporters: [debug, awscloudwatchlogs]

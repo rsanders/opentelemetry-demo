@@ -1,0 +1,9 @@
+---
+- name: Provision and deploy the OpenTelemetry demo on EC2
+  hosts: otel_demo
+  become: true
+  gather_facts: true
+
+  roles:
+    - docker
+    - otel_demo

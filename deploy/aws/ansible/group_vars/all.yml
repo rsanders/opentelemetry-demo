@@ -1,0 +1,11 @@
+---
+# aws_region, compose_profile, app_log_group, otelcol_log_group come from the
+# Terraform-generated inventory.ini ([otel_demo:vars]) -- see terraform/ec2.tf
+# and terraform/templates/inventory.tpl.ini.
+
+repo_dest: /opt/otel-demo
+docker_compose_plugin_version: "v2.39.4"
+
+compose_file_flags:
+  core: "-f compose.yaml"
+  full: "-f compose.yaml -f compose.full.yaml"
