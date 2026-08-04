@@ -51,6 +51,13 @@ resource "aws_iam_role_policy" "otel_export" {
   policy = data.aws_iam_policy_document.otel_export.json
 }
 
+# Lets Session Manager reach the instance (aws ssm start-session) without
+# opening any inbound port -- an alternative to the SSH path Ansible uses.
+resource "aws_iam_role_policy_attachment" "ssm" {
+  role       = aws_iam_role.instance.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
 resource "aws_iam_instance_profile" "instance" {
   name = "${var.project_name}-instance"
   role = aws_iam_role.instance.name

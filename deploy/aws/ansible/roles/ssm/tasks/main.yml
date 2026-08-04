@@ -1,0 +1,14 @@
+---
+# Amazon Linux 2023 ships amazon-ssm-agent preinstalled but not always
+# guaranteed to be enabled/running (e.g. a custom or older AMI); make it
+# explicit so `aws ssm start-session` works regardless.
+- name: Ensure amazon-ssm-agent is installed
+  ansible.builtin.dnf:
+    name: amazon-ssm-agent
+    state: present
+
+- name: Enable and start amazon-ssm-agent
+  ansible.builtin.systemd:
+    name: amazon-ssm-agent
+    enabled: true
+    state: started

@@ -1,4 +1,29 @@
 ---
+# This AMI wires sshd to EC2 Instance Connect's AuthorizedKeysCommand
+# (/opt/aws/bin/eic_run_authorized_keys), which fails (exit 255) in this
+# account and, since OpenSSH treats a failing AuthorizedKeysCommand as fatal
+# for that auth attempt, blocks *all* key-based SSH -- including the static
+# authorized_keys file -- not just EIC's own ephemeral-key flow. Disable it
+# since this deployment relies on static keys (Ansible/`make ssh`) and SSM,
+# not EC2 Instance Connect.
+- name: Disable the EC2 Instance Connect AuthorizedKeysCommand in sshd
+  ansible.builtin.replace:
+    path: /etc/ssh/sshd_config
+    regexp: '^(AuthorizedKeysCommand.*)$'
+    replace: '#\1'
+  register: sshd_config_changed
+
+- name: Validate sshd config after edit
+  ansible.builtin.command: sshd -t
+  changed_when: false
+  when: sshd_config_changed.changed
+
+- name: Restart sshd if its config changed
+  ansible.builtin.systemd:
+    name: sshd
+    state: restarted
+  when: sshd_config_changed.changed
+
 - name: Install Docker Engine and supporting packages (Amazon Linux 2023 repo)
   ansible.builtin.dnf:
     name:

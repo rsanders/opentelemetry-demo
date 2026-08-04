@@ -25,6 +25,7 @@ variable "root_volume_size_gb" {
 variable "allowed_cidr" {
   description = "CIDR block allowed to reach SSH (22) and the demo frontend (8080), e.g. \"203.0.113.4/32\". No default on purpose -- you must scope this to your own IP."
   type        = string
+  default     = "162.200.0.0/16"
 
   validation {
     condition     = can(cidrhost(var.allowed_cidr, 0))

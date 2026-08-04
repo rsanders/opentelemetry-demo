@@ -78,9 +78,15 @@ AWS-managed policies.
 
 **Network access scoped to one IP, not open to the internet.** Both SSH (22)
 and the demo frontend (8080) are restricted to an `allowed_cidr` Terraform
-variable with no default — you're forced to set it (e.g. to your own IP)
-rather than accidentally exposing a demo checkout flow to the public
-internet.
+variable — you're forced to set it (e.g. to your own IP) rather than
+accidentally exposing a demo checkout flow to the public internet.
+
+**SSM Session Manager as a second way in.** The instance role also carries
+`AmazonSSMManagedInstanceCore`, and the `ssm` Ansible role makes sure the
+agent is enabled, so `make ssm` can open a shell through the AWS API instead
+of SSH — useful if `allowed_cidr` doesn't cover wherever you're connecting
+from, and every session is logged in CloudTrail. It's additive: Ansible
+still provisions over SSH, this just gives you a second, keyless path in.
 
 **Instance sized for real overhead, not just the compose file's numbers.**
 `compose.yaml`'s services declare ~3.2GB of container memory limits in

@@ -1,7 +1,7 @@
 TF_DIR := terraform
 ANSIBLE_DIR := ansible
 
-.PHONY: fmt validate plan up update down outputs ssh
+.PHONY: fmt validate plan up update down outputs ssh ssm
 
 fmt: ## Format the Terraform files
 	cd $(TF_DIR) && terraform fmt -recursive
@@ -27,4 +27,7 @@ outputs: ## Print the app URL, ssh command, etc.
 	cd $(TF_DIR) && terraform output
 
 ssh: ## SSH into the demo instance
-	cd $(TF_DIR) && terraform output -raw ssh_command | bash
+	cd $(TF_DIR) && bash -c "$$(terraform output -raw ssh_command)"
+
+ssm: ## Open a Session Manager shell on the demo instance (no SSH key/open port needed)
+	cd $(TF_DIR) && bash -c "$$(terraform output -raw ssm_command)"

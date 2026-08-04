@@ -25,10 +25,29 @@ modified.
 - [Terraform](https://developer.hashicorp.com/terraform/install) >= 1.6
 - [Ansible](https://docs.ansible.com/ansible/latest/installation_guide/index.html)
   (includes the `ansible.posix` collection used for `synchronize`)
-- An SSH client (used by Ansible to reach the instance)
+- An SSH client (used by Ansible, and by `make ssh`, to reach the instance)
+- To use `make ssm`: the AWS CLI plus its Session Manager plugin
 
 Both `terraform` and `ansible` can be installed via Homebrew:
 `brew tap hashicorp/tap && brew install hashicorp/tap/terraform ansible`.
+
+**Installing the Session Manager plugin.** `brew install --cask
+session-manager-plugin` needs a GUI `sudo` installer prompt, which fails in
+headless/CI/agent shells ("sudo: a terminal is required"). If you hit that,
+install the plugin binary directly, no sudo required:
+
+```bash
+curl -sL "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/mac/sessionmanager-bundle.zip" -o /tmp/sm.zip
+unzip -q -o /tmp/sm.zip -d /tmp
+mkdir -p ~/bin
+cp /tmp/sessionmanager-bundle/bin/session-manager-plugin ~/bin/
+chmod +x ~/bin/session-manager-plugin
+export PATH="$HOME/bin:$PATH"   # add to your shell profile to persist
+```
+
+(Swap the URL's `mac` for `linux` on Linux — see the [AWS docs](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html)
+for other platforms/architectures. The Mac bundle is x86_64; it runs fine
+under Rosetta 2 on Apple Silicon.)
 
 ## Cost
 
@@ -98,10 +117,83 @@ role, and CloudWatch log groups. Nothing is left running or billing.
   (application logs) and `/otel-demo/otelcol` (EMF metric log lines)
 - **Metrics**: AWS Console → CloudWatch → Metrics → custom namespace `OtelDemo`
 
+## Logging into the instance
+
+Two ways in:
+
+```bash
+make ssh   # SSH, using the Terraform-generated key -- what Ansible itself uses
+make ssm   # AWS Systems Manager Session Manager -- no SSH key or open port needed
+```
+
+**`make ssh`** needs `allowed_cidr` to actually cover the IP you're
+connecting from *right now*. If you're on a network with a rotating/pooled
+outbound IP (common in some sandboxed or corporate-proxied environments —
+check by running `curl -s https://checkip.amazonaws.com` a couple of times
+a minute apart and seeing if it changes), a single `/32` won't reliably
+work. Widen `allowed_cidr` to a range that actually covers your egress pool,
+run `make update` to apply it, and re-check with `curl checkip.amazonaws.com`
+if SSH still times out. Avoid `0.0.0.0/0` except as a last resort for a
+one-off verification, and narrow it back down afterward.
+
+If instead you get **`Permission denied (publickey,gssapi-keyex,gssapi-with-mic)`**
+with a key you're sure is correct (right file, right fingerprint, present in
+`authorized_keys` on the box), it's likely not the key at all: some AL2023
+AMIs wire sshd's `AuthorizedKeysCommand` to EC2 Instance Connect
+(`/opt/aws/bin/eic_run_authorized_keys`), and if that command fails (check
+`journalctl -u sshd` for `AuthorizedKeysCommand ... failed, status 255`),
+OpenSSH treats it as fatal for the whole auth attempt — blocking the static
+`authorized_keys` file too, not just EIC's own flow. The `docker` Ansible
+role now disables this proactively (comments out
+`AuthorizedKeysCommand`/`AuthorizedKeysCommandUser` and restarts sshd) on
+every `make up`/`make update`, so a fresh deploy shouldn't hit this. If you
+still do (e.g. on an instance provisioned before this fix), get in via
+`make ssm` or `aws ssm send-command` (see below) and disable it manually:
+
+```bash
+sudo sed -i -E 's/^(AuthorizedKeysCommand.*)$/#\1/' /etc/ssh/sshd_config
+sudo sshd -t && sudo systemctl restart sshd
+```
+
+**`make ssm`** opens an interactive shell through the AWS API instead of the
+security group, so it doesn't depend on `allowed_cidr` at all, and every
+session is logged in CloudTrail. It needs the instance's IAM role (already
+attached — `AmazonSSMManagedInstanceCore`) and the Session Manager plugin
+locally (see Prerequisites). Some AWS accounts restrict the *interactive*
+`ssm:StartSession` action via SCP or permission boundary even when other SSM
+actions are allowed — if `make ssm` fails with a 403
+("Server authentication failed") while `aws ssm describe-instance-information`
+works fine, that's almost always an intentional org-level control, not a
+bug; check with whoever administers the account rather than trying to route
+around it. In that case, fall back to `make ssh`, or run one-off commands
+non-interactively via `aws ssm send-command` (document
+`AWS-RunShellScript`), which is commonly still allowed and is how the
+`docker`/`otel_demo` Ansible roles' checks were verified against this stack.
+
+**Recovering SSH access without a working key.** If the local
+`ansible/otel-demo-ssh.pem` is ever lost or out of sync with the instance
+(e.g. state drift, a botched `terraform apply`), and `make ssm` works, you
+can bootstrap SSH back without recreating the instance: generate a fresh
+local keypair, then use `aws ssm send-command` to append its public half to
+`/home/ec2-user/.ssh/authorized_keys`:
+
+```bash
+ssh-keygen -t ed25519 -f ./ansible/otel-demo-ssh.pem -N ""
+PUBKEY=$(cat ./ansible/otel-demo-ssh.pem.pub)
+aws ssm send-command --instance-ids <instance-id> \
+  --document-name AWS-RunShellScript \
+  --parameters "{\"commands\":[\"mkdir -p /home/ec2-user/.ssh\",\"echo '$PUBKEY' >> /home/ec2-user/.ssh/authorized_keys\",\"chown -R ec2-user:ec2-user /home/ec2-user/.ssh\",\"chmod 700 /home/ec2-user/.ssh\",\"chmod 600 /home/ec2-user/.ssh/authorized_keys\"]}"
+```
+
+Treat this as a stopgap: it gets you back in, but the Terraform-managed
+`aws_key_pair` and the key actually trusted on the box are now out of sync.
+Reconcile them properly (`terraform import`/`-replace` as needed, then push
+the resulting key the same way) rather than leaving it drifted long-term.
+
 ## Troubleshooting
 
 ```bash
-make ssh                                    # SSH into the instance
+make ssh                                    # or `make ssm`
 docker compose -f compose.yaml ps           # from /opt/otel-demo on the instance
 docker compose -f compose.yaml logs otel-collector
 ```

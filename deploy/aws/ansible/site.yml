@@ -5,5 +5,6 @@
   gather_facts: true
 
   roles:
+    - ssm
     - docker
     - otel_demo
