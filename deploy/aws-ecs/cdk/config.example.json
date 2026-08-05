@@ -1,0 +1,13 @@
+{
+  "allowedCidr": "203.0.113.4/32",
+
+  "_comment": "Copy this file to config.json (gitignored) and set allowedCidr to your own IP. Find yours with: curl -s https://checkip.amazonaws.com. Everything below is optional; the values shown are the defaults.",
+
+  "region": "us-east-1",
+  "projectName": "otel-demo-ecs",
+  "imageName": "ghcr.io/open-telemetry/demo",
+  "demoVersion": "latest",
+  "cpuArchitecture": "X86_64",
+  "loadGeneratorVus": 5,
+  "logRetentionDays": 14
+}

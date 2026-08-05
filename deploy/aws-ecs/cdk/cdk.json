@@ -1,0 +1,15 @@
+{
+  "app": "npx ts-node --prefer-ts-exts bin/otel-demo-ecs.ts",
+  "watch": {
+    "include": ["bin/**", "lib/**", "files/**"],
+    "exclude": ["node_modules", "cdk.out"]
+  },
+  "context": {
+    "@aws-cdk/aws-ecs:disableEcsImdsBlocking": true,
+    "@aws-cdk/core:checkSecretUsage": true,
+    "@aws-cdk/aws-iam:minimizePolicies": true,
+    "@aws-cdk/core:validateSnapshotRemovalPolicy": true,
+    "@aws-cdk/aws-ec2:launchTemplateDefaultUserData": true,
+    "@aws-cdk/core:target-partitions": ["aws"]
+  }
+}

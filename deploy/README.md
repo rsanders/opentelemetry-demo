@@ -2,11 +2,22 @@
 
 This directory holds infrastructure-as-code for running the demo somewhere
 other than a developer's laptop. Each subdirectory targets one deployment
-environment; today there is one:
+environment; today there are two, both for us-east-1 and both forwarding
+telemetry into CloudWatch:
 
-- [`aws/`](aws/) — a single-instance AWS deployment for us-east-1, with
-  telemetry forwarded into CloudWatch. See [`aws/README.md`](aws/README.md)
-  for prerequisites and step-by-step create/modify/destroy instructions.
+- [`aws/`](aws/) — a single-instance deployment: the whole `compose.yaml`
+  stack on one EC2 instance, provisioned with Terraform and Ansible. See
+  [`aws/README.md`](aws/README.md).
+- [`aws-ecs/`](aws-ecs/) — the same demo with each service in its own ECS
+  Fargate task, defined entirely in AWS CDK (TypeScript). See
+  [`aws-ecs/README.md`](aws-ecs/README.md).
+
+Both expose the same `make` interface (`up`, `update`, `down`, `outputs`,
+`plan`, `validate`, ...) and name their AWS resources distinctly —
+`otel-demo*` versus `otel-demo-ecs*` — so they can coexist in one account.
+Pick `aws/` for the cheapest way to get the demo running (~$120-150/mo);
+pick `aws-ecs/` to demo per-service isolation on ECS (~$270-310/mo, and see
+that README for why the same workload costs twice as much).
 
 ## Requirements this was built against
 
@@ -24,15 +35,21 @@ environment; today there is one:
 
 ## Design choices and reasoning
 
+The reasoning below is for [`aws/`](aws/), which came first.
+[`aws-ecs/`](aws-ecs/) revisits several of these decisions for Fargate and
+documents its own in [`aws-ecs/README.md`](aws-ecs/README.md#design-choices).
+
 **EC2 + Docker Compose, not ECS or EKS.** The demo already ships a working
 `compose.yaml` describing 22 services. Running it near-unmodified on a
 single EC2 instance gets a working deployment with the least new code and
-the fewest moving parts to maintain. ECS Fargate would mean hand-writing 20+
-task definitions and pushing images through ECR; EKS adds a managed
-control-plane bill and Kubernetes operational overhead. Neither buys
-anything for a non-HA demo — they'd be solving problems (rolling deploys,
-service discovery across many independently-scaled services) that this
-workload doesn't have.
+the fewest moving parts to maintain. ECS Fargate means writing out 20+ task
+definitions and replacing bind mounts and bridge-network DNS with Cloud Map
+and task volumes; EKS adds a managed control-plane bill and Kubernetes
+operational overhead. Neither buys anything for a non-HA demo — they'd be
+solving problems (rolling deploys, service discovery across many
+independently-scaled services) that this workload doesn't have. The
+`aws-ecs/` sibling exists to demonstrate that ECS path anyway, at roughly
+twice the monthly cost; this one remains the cheap default.
 
 **Terraform for AWS resources, Ansible for the instance.** Terraform owns
 everything that's a real cloud resource with a lifecycle worth tracking in
@@ -119,14 +136,26 @@ real AWS account, not just read through.
 
 ## Instructions for use
 
-See [`aws/README.md`](aws/README.md) for the full walkthrough. Short version:
+See each subdirectory's README for the full walkthrough. Short versions:
 
 ```bash
+# EC2 + Docker Compose -- see aws/README.md
 cd deploy/aws/terraform
 cp terraform.tfvars.example terraform.tfvars   # set allowed_cidr to your IP
 cd ..
 make up       # create infra + deploy the app
 make outputs  # print the app URL
 make update   # re-sync code/config changes and restart the stack
+make down     # tear everything down
+```
+
+```bash
+# ECS Fargate + CDK -- see aws-ecs/README.md
+cd deploy/aws-ecs/cdk
+cp config.example.json config.json             # set allowedCidr to your IP
+cd ..
+make up       # create infra + deploy all 19 services
+make outputs  # print the app URL
+make update   # re-deploy after a config change
 make down     # tear everything down
 ```

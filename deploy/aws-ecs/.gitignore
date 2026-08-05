@@ -1,0 +1,11 @@
+# The repo root's .gitignore excludes bin/ as a build-artifact directory. Here
+# it is the CDK app's entry point, which does need to be committed.
+!cdk/bin/
+
+# CDK build output and dependencies -- never commit.
+cdk/node_modules/
+cdk/cdk.out/
+cdk/cdk.context.json
+
+# Deployment-specific settings (your own allowed CIDR, etc.).
+cdk/config.json
