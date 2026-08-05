@@ -11,12 +11,16 @@ and forwards everything the `otel-collector` service sees into CloudWatch:
 This is intentionally a single-instance, no-HA setup: it's meant for demoing
 the telemetry pipeline, not for production traffic.
 
-Terraform provisions the AWS resources (VPC, EC2 instance, security group,
-IAM role, CloudWatch log groups); Ansible installs Docker on the instance and
-runs `docker compose up -d` against a synced copy of the repo, after
-templating AWS exporters into the collector's existing customization seam
+Terraform provisions the AWS resources (VPC, EC2 instance, an Elastic IP for
+a stable public address, security group, IAM role, CloudWatch log groups);
+Ansible installs Docker on the instance and runs `docker compose up -d`
+against a synced copy of the repo, after templating AWS exporters into the
+collector's existing customization seam
 (`src/otel-collector/otelcol-config-extras.yml`) — no upstream files are
-modified.
+modified. A small Ansible-deployed compose override additionally publishes
+`frontend-proxy` on port 80 (alongside its usual 8080), so the app is
+reachable on the standard HTTP port at a fixed IP that survives instance
+replacement.
 
 ## Prerequisites
 
@@ -66,23 +70,55 @@ cp terraform.tfvars.example terraform.tfvars
 
 Edit `terraform.tfvars` and set `allowed_cidr` to your own IP (find it with
 `curl -s https://checkip.amazonaws.com`), e.g. `"203.0.113.4/32"`. This is
-required — it scopes SSH (22) and the demo frontend (8080) to just you.
+required — it scopes SSH (22) and the demo frontend (80 and 8080) to just
+you.
 
 ```bash
 cd deploy/aws
 make up
 ```
 
-This runs `terraform apply` (creates the VPC/EC2/IAM/CloudWatch resources and
-writes `ansible/inventory.ini` + a generated SSH key), then runs the Ansible
+This runs `terraform apply` (via `terraform/apply-with-retry.sh` — see
+below) to create the VPC/EC2/IAM/CloudWatch resources and write
+`ansible/inventory.ini` + a generated SSH key, then runs the Ansible
 playbook to install Docker, sync the repo, wire up the AWS exporters, and
-start the stack. First run takes a few minutes (instance boot + image pulls).
+start the stack. First run takes a few minutes (instance boot + image
+pulls). `up`/`update` apply non-interactively (`-auto-approve`); run `make
+plan` first if you want to review changes before applying.
+
+Ansible's first task waits for SSH to actually accept connections
+(`wait_for_connection`) and for cloud-init to finish before doing anything
+else — `terraform apply` returns as soon as AWS reports the instance
+"running", which is well before sshd is actually up, so connecting
+immediately would otherwise fail.
+
+Two AWS-side quirks `make up` handles automatically, discovered by running
+many full `terraform destroy` → `make up` cycles back to back:
+
+- **An out-of-band VPC endpoint blocks subnet/VPC deletion.** Accounts with
+  org-wide GuardDuty runtime monitoring have AWS auto-attach a
+  `guardduty-data` interface VPC endpoint (with its own ENI and security
+  group) into every new VPC — Terraform doesn't manage it, but it blocks
+  `terraform destroy` from ever completing the subnet/VPC teardown. A
+  `null_resource` in `terraform/network.tf` deletes any such endpoint and
+  its security group at destroy time, before Terraform touches the
+  subnet/VPC.
+- **CloudWatch log group creation can race with itself.** Re-creating the
+  `/otel-demo/*` log groups right after a `terraform destroy` can fail once
+  with `ResourceAlreadyExistsException` even on a clean apply — the create
+  actually succeeds on AWS's side, but the provider doesn't record it in
+  state (looks like an internal request retry racing the real response).
+  `terraform/apply-with-retry.sh` detects that specific error, imports
+  whatever was actually created, and retries — any other failure is
+  surfaced immediately, not silently retried.
 
 ```bash
 make outputs
 ```
 
-prints the app URL (`http://<public-ip>:8080`) and the ssh command.
+prints the app URL (`http://<elastic-ip>` — port 80, also reachable on
+`:8080`) and the ssh command. The IP is an Elastic IP, so it stays the same
+across `make update` even if the underlying instance gets replaced.
 
 ## Modify
 
@@ -108,7 +144,10 @@ make down
 ```
 
 Runs `terraform destroy` — removes the instance, security group, VPC, IAM
-role, and CloudWatch log groups. Nothing is left running or billing.
+role, and CloudWatch log groups. Nothing is left running or billing. Takes
+2-3 minutes in accounts with GuardDuty runtime monitoring enabled (see
+above) while it waits for AWS to detach GuardDuty's own ENI from the VPC
+before the subnet/VPC can be deleted; this is automatic, not a hang.
 
 ## Verifying telemetry landed in CloudWatch
 
@@ -193,10 +232,20 @@ the resulting key the same way) rather than leaving it drifted long-term.
 ## Troubleshooting
 
 ```bash
-make ssh                                    # or `make ssm`
-docker compose -f compose.yaml ps           # from /opt/otel-demo on the instance
-docker compose -f compose.yaml logs otel-collector
+make ssh                                                          # or `make ssm`
+docker compose -f compose.yaml -f compose.aws-override.yml ps     # from /opt/otel-demo on the instance
+docker compose -f compose.yaml -f compose.aws-override.yml logs otel-collector
 ```
+
+**Browser gives `ERR_CONNECTION_REFUSED` even though SSH/SSM works.**
+`terraform apply` and the Ansible run are two separate steps — `make up`
+chains them, but if you ever ran `terraform apply` (or
+`apply-with-retry.sh`) on its own, e.g. while debugging, the instance
+exists and SSH/SSM work fine (that only needs the EC2 instance + its key),
+but Docker was never installed and nothing is listening on 80/8080 yet.
+Confirm with `which docker` over SSH — if that's empty, provisioning never
+ran. Fix: `cd deploy/aws/ansible && ansible-playbook -i inventory.ini
+site.yml` (or just `make update`), which is idempotent and safe to re-run.
 
 If the collector isn't exporting, check its logs for AWS SDK/credential
 errors — it authenticates via the EC2 instance's IAM role, so there are no

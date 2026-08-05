@@ -26,6 +26,15 @@ resource "aws_vpc_security_group_ingress_rule" "frontend" {
   ip_protocol       = "tcp"
 }
 
+resource "aws_vpc_security_group_ingress_rule" "frontend_http" {
+  security_group_id = aws_security_group.instance.id
+  description       = "Demo frontend-proxy on the standard HTTP port"
+  cidr_ipv4         = var.allowed_cidr
+  from_port         = 80
+  to_port           = 80
+  ip_protocol       = "tcp"
+}
+
 resource "aws_vpc_security_group_egress_rule" "all" {
   security_group_id = aws_security_group.instance.id
   description       = "All outbound (image pulls, CloudWatch/X-Ray API calls)"

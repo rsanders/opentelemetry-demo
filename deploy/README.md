@@ -94,6 +94,29 @@ total, but JVM/Node/Python startup overhead plus Docker/OS overhead need
 real headroom, so the default instance type is `t3.xlarge` (4 vCPU/16GB)
 rather than something sized to the nominal total.
 
+**A static IP via Elastic IP, not a load balancer.** For a single instance,
+an ALB gives a stable *DNS name* backed by rotating IPs, not an actual fixed
+IP, and costs ~$16-20/mo plus LCU charges on top of the instance — solving a
+problem (traffic distribution across replicas) this deployment doesn't
+have. An Elastic IP is free while attached to a running instance, gives a
+genuinely static address, and survives instance replacement (`make update`
+can replace the EC2 instance without changing the URL you bookmark).
+
+**`make up` is proven idempotent across repeated destroy/apply cycles, not
+just tested once.** Two AWS-side quirks only show up on a *fresh* VPC
+right after a `terraform destroy`, so they'd be easy to miss testing a
+single deploy: an org-wide GuardDuty integration auto-attaches an
+unmanaged VPC endpoint (and security group) into every new VPC, which
+blocks `terraform destroy` from completing unless cleaned up explicitly;
+and CloudWatch log group creation can occasionally race with itself right
+after a destroy, failing an otherwise-clean apply with
+`ResourceAlreadyExistsException` even though the resource was actually
+created. Both are handled automatically (a destroy-time cleanup hook for
+the former, a self-healing apply wrapper for the latter) — see
+[`aws/README.md`](aws/README.md) for the mechanics. This was verified by
+running the full `terraform destroy` → `make up` cycle repeatedly against a
+real AWS account, not just read through.
+
 ## Instructions for use
 
 See [`aws/README.md`](aws/README.md) for the full walkthrough. Short version:

@@ -29,8 +29,16 @@
     group: ec2-user
     mode: "0644"
 
+- name: Deploy the AWS compose override (publishes frontend-proxy on :80)
+  ansible.builtin.copy:
+    src: compose.aws-override.yml
+    dest: "{{ repo_dest }}/compose.aws-override.yml"
+    owner: ec2-user
+    group: ec2-user
+    mode: "0644"
+
 - name: Pull compose images
-  ansible.builtin.shell: "docker compose {{ compose_file_flags[compose_profile] }} pull"
+  ansible.builtin.shell: "docker compose {{ compose_file_flags[compose_profile] }} -f compose.aws-override.yml pull"
   args:
     chdir: "{{ repo_dest }}"
   become_user: ec2-user
@@ -38,7 +46,7 @@
     HOME: /home/ec2-user
 
 - name: Start the demo stack
-  ansible.builtin.shell: "docker compose {{ compose_file_flags[compose_profile] }} up -d --remove-orphans"
+  ansible.builtin.shell: "docker compose {{ compose_file_flags[compose_profile] }} -f compose.aws-override.yml up -d --remove-orphans"
   args:
     chdir: "{{ repo_dest }}"
   become_user: ec2-user

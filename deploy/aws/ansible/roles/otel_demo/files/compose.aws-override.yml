@@ -1,0 +1,7 @@
+# Deployed by Ansible (roles/otel_demo) alongside the upstream compose files.
+# `ports` entries merge (concatenate) across -f files per the Compose spec,
+# so this adds a :80 publish for frontend-proxy without touching compose.yaml.
+services:
+  frontend-proxy:
+    ports:
+      - "80:8080"

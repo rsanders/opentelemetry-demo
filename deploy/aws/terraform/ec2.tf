@@ -36,10 +36,19 @@ resource "aws_instance" "this" {
   }
 }
 
+resource "aws_eip" "this" {
+  domain   = "vpc"
+  instance = aws_instance.this.id
+
+  tags = {
+    Name = "${var.project_name}"
+  }
+}
+
 resource "local_file" "ansible_inventory" {
   filename = "${path.module}/../ansible/inventory.ini"
   content = templatefile("${path.module}/templates/inventory.tpl.ini", {
-    public_ip         = aws_instance.this.public_ip
+    public_ip         = aws_eip.this.public_ip
     ssh_key_path      = "${var.project_name}-ssh.pem"
     aws_region        = var.region
     compose_profile   = var.compose_profile

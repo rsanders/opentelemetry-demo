@@ -1,16 +1,16 @@
 output "public_ip" {
-  description = "Public IP of the demo instance."
-  value       = aws_instance.this.public_ip
+  description = "Static public (Elastic) IP of the demo instance. Stable across instance replacement."
+  value       = aws_eip.this.public_ip
 }
 
 output "app_url" {
-  description = "URL of the demo frontend (frontend-proxy / ENVOY_PORT)."
-  value       = "http://${aws_instance.this.public_ip}:8080"
+  description = "URL of the demo frontend (frontend-proxy), on the standard HTTP port."
+  value       = "http://${aws_eip.this.public_ip}"
 }
 
 output "ssh_command" {
   description = "Command to SSH into the instance."
-  value       = "ssh -i ${local_sensitive_file.ssh_private_key.filename} ec2-user@${aws_instance.this.public_ip}"
+  value       = "ssh -i ${local_sensitive_file.ssh_private_key.filename} ec2-user@${aws_eip.this.public_ip}"
 }
 
 output "ssm_command" {

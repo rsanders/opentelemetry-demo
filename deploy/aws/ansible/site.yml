@@ -2,7 +2,26 @@
 - name: Provision and deploy the OpenTelemetry demo on EC2
   hosts: otel_demo
   become: true
-  gather_facts: true
+  gather_facts: false
+
+  pre_tasks:
+    # terraform apply returns as soon as the AWS API reports the instance
+    # "running", which is well before cloud-init has brought up sshd and
+    # generated host keys -- connecting immediately fails/times out. Poll
+    # until SSH actually accepts connections before doing anything else.
+    - name: Wait for SSH to become reachable
+      ansible.builtin.wait_for_connection:
+        delay: 5
+        timeout: 300
+      vars:
+        ansible_become: false
+
+    - name: Gather facts now that the host is reachable
+      ansible.builtin.setup:
+
+    - name: Wait for cloud-init to finish
+      ansible.builtin.command: cloud-init status --wait
+      changed_when: false
 
   roles:
     - ssm
