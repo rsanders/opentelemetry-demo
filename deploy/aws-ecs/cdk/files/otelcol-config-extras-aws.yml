@@ -12,6 +12,13 @@
 # Everything environment-specific comes in through ${env:...}, which the
 # collector expands before parsing, so this file needs no templating.
 
+extensions:
+  # Signs requests to the CloudWatch metrics OTLP endpoint. Credentials come
+  # from the ECS task role through the default AWS SDK chain.
+  sigv4auth/metrics:
+    service: 'monitoring'
+    region: ${env:AWS_REGION}
+
 receivers:
   # The base config hardcodes short Docker Compose hostnames for these two.
   # On ECS every service is reached through its Cloud Map FQDN instead.
@@ -31,21 +38,31 @@ processors:
   # reading the task metadata endpoint to add aws.ecs.* resource attributes.
   resourcedetection:
     detectors: [env, ecs, system]
+  # Sized to stay inside the metrics endpoint's per-request limits of 1000
+  # data points and 1 MB uncompressed.
+  batch/metrics:
+    send_batch_size: 200
+    timeout: 10s
 
 exporters:
   awsxray:
     region: ${env:AWS_REGION}
-  awsemf:
-    region: ${env:AWS_REGION}
-    namespace: OtelDemo
-    log_group_name: '${env:OTELCOL_LOG_GROUP}'
-    log_stream_name: 'metrics'
   awscloudwatchlogs:
     region: ${env:AWS_REGION}
     log_group_name: '${env:APP_LOG_GROUP}'
     log_stream_name: 'otel-collector'
+  # CloudWatch's OpenTelemetry metrics endpoint. This is plain OTLP/HTTP with
+  # SigV4 signing rather than an AWS-specific exporter, so metrics land in
+  # CloudWatch's OTel metric store -- queried with PromQL in Query Studio,
+  # not as a classic namespace in the Metrics console.
+  otlphttp/metrics:
+    metrics_endpoint: https://monitoring.${env:AWS_REGION}.amazonaws.com/v1/metrics
+    compression: gzip
+    auth:
+      authenticator: sigv4auth/metrics
 
 service:
+  extensions: [sigv4auth/metrics]
   pipelines:
     traces:
       exporters: [debug, span_metrics, awsxray]
@@ -54,6 +71,7 @@ service:
       # which Fargate can serve -- no Docker socket, and no host filesystem to
       # mount at /hostfs.
       receivers: [otlp, span_metrics, http_check/frontend-proxy, nginx, redis, postgresql, prometheus/ad]
-      exporters: [debug, awsemf]
+      processors: [resourcedetection, memory_limiter, batch/metrics]
+      exporters: [debug, otlphttp/metrics]
     logs:
       exporters: [debug, awscloudwatchlogs]

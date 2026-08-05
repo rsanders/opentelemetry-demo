@@ -1,5 +1,5 @@
 ---
-# aws_region, compose_profile, app_log_group, otelcol_log_group come from the
+# aws_region, compose_profile, and app_log_group come from the
 # Terraform-generated inventory.ini ([otel_demo:vars]) -- see terraform/ec2.tf
 # and terraform/templates/inventory.tpl.ini.
 

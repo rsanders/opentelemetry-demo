@@ -128,15 +128,11 @@ export class OtelDemoEcsStack extends Stack {
       enableFargateCapacityProviders: true,
     });
 
-    // The collector's awsemf/awscloudwatchlogs exporters write here. Container
-    // stdout goes to a per-service group created further down.
+    // The collector's awscloudwatchlogs exporter writes here. Container stdout
+    // goes to a per-service group created further down. Metrics need no log
+    // group at all -- they go to the CloudWatch OTLP metrics endpoint.
     const appLogGroup = new logs.LogGroup(this, 'AppLogGroup', {
       logGroupName: `/${prefix}/logs`,
-      retention,
-      removalPolicy: RemovalPolicy.DESTROY,
-    });
-    const collectorLogGroup = new logs.LogGroup(this, 'CollectorLogGroup', {
-      logGroupName: `/${prefix}/otelcol`,
       retention,
       removalPolicy: RemovalPolicy.DESTROY,
     });
@@ -158,7 +154,6 @@ export class OtelDemoEcsStack extends Stack {
       namespace: namespaceName,
       publicUrl,
       appLogGroupName: appLogGroup.logGroupName,
-      collectorLogGroupName: collectorLogGroup.logGroupName,
     });
 
     const services = new Map<string, ecs.FargateService>();
@@ -347,14 +342,16 @@ export class OtelDemoEcsStack extends Stack {
           'logs:PutLogEvents',
           'logs:DescribeLogStreams',
         ],
-        resources: [`${appLogGroup.logGroupArn}:*`, `${collectorLogGroup.logGroupArn}:*`],
+        resources: [`${appLogGroup.logGroupArn}:*`],
       }),
     );
     collector.taskDefinition.addToTaskRolePolicy(
       new iam.PolicyStatement({
         sid: 'CloudWatchMetrics',
+        // What the CloudWatch OTLP metrics endpoint authorizes SigV4-signed
+        // requests against; it does not support resource-level restriction.
         actions: ['cloudwatch:PutMetricData'],
-        resources: ['*'], // PutMetricData does not support resource-level restriction
+        resources: ['*'],
       }),
     );
     collector.taskDefinition.addToTaskRolePolicy(

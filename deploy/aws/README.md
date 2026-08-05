@@ -3,7 +3,11 @@
 Deploys the demo's core services (`compose.yaml`) onto a single EC2 instance
 and forwards everything the `otel-collector` service sees into CloudWatch:
 
-- **Metrics** → CloudWatch Metrics, via the `awsemf` exporter (namespace `OtelDemo`)
+- **Metrics** → CloudWatch, via the `otlphttp` exporter pointed at CloudWatch's
+  OpenTelemetry metrics endpoint (`https://monitoring.<region>.amazonaws.com/v1/metrics`),
+  signed with the `sigv4auth` extension. These land in CloudWatch's OTel metric
+  store and are queried with PromQL in Query Studio — not as a classic
+  namespace in the Metrics console.
 - **Logs** → CloudWatch Logs, via the `awscloudwatchlogs` exporter
 - **Traces** → AWS X-Ray, via the `awsxray` exporter (visible in the CloudWatch
   console under Traces / ServiceLens — CloudWatch itself has no trace store)
@@ -153,8 +157,13 @@ before the subnet/VPC can be deleted; this is automatic, not a hang.
 
 - **Traces**: AWS Console → CloudWatch → Traces (or X-Ray → Traces)
 - **Logs**: AWS Console → CloudWatch → Log groups → `/otel-demo/logs`
-  (application logs) and `/otel-demo/otelcol` (EMF metric log lines)
-- **Metrics**: AWS Console → CloudWatch → Metrics → custom namespace `OtelDemo`
+- **Metrics**: AWS Console → CloudWatch → **Query Studio**, then run a PromQL
+  query. `{__name__!=""}` lists everything arriving; the demo's own metrics are
+  defined in [`telemetry-schema/metrics/`](../../telemetry-schema/metrics/) and
+  appear with dots replaced by underscores, so `demo.ad.requests` is queried as
+  `demo_ad_requests`. These will *not* show up under CloudWatch → Metrics,
+  which lists only classic namespaces — the OTLP endpoint feeds CloudWatch's
+  separate OTel metric store.
 
 ## Logging into the instance
 

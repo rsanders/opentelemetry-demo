@@ -6,24 +6,44 @@
 # merge; only conflicting array keys are replaced) -- see the comment in the
 # original stub for details.
 
+extensions:
+  # Signs requests to the CloudWatch metrics OTLP endpoint. Credentials come
+  # from the EC2 instance role through the default AWS SDK chain.
+  sigv4auth/metrics:
+    service: 'monitoring'
+    region: {{ aws_region }}
+
+processors:
+  # Sized to stay inside the metrics endpoint's per-request limits of 1000
+  # data points and 1 MB uncompressed.
+  batch/metrics:
+    send_batch_size: 200
+    timeout: 10s
+
 exporters:
   awsxray:
     region: {{ aws_region }}
-  awsemf:
-    region: {{ aws_region }}
-    namespace: OtelDemo
-    log_group_name: '{{ otelcol_log_group }}'
-    log_stream_name: 'metrics'
   awscloudwatchlogs:
     region: {{ aws_region }}
     log_group_name: '{{ app_log_group }}'
     log_stream_name: 'otel-collector'
+  # CloudWatch's OpenTelemetry metrics endpoint. This is plain OTLP/HTTP with
+  # SigV4 signing rather than an AWS-specific exporter, so metrics land in
+  # CloudWatch's OTel metric store -- queried with PromQL in Query Studio,
+  # not as a classic namespace in the Metrics console.
+  otlphttp/metrics:
+    metrics_endpoint: https://monitoring.{{ aws_region }}.amazonaws.com/v1/metrics
+    compression: gzip
+    auth:
+      authenticator: sigv4auth/metrics
 
 service:
+  extensions: [sigv4auth/metrics]
   pipelines:
     traces:
       exporters: [debug, span_metrics, awsxray]
     metrics:
-      exporters: [debug, awsemf]
+      processors: [resourcedetection, memory_limiter, batch/metrics]
+      exporters: [debug, otlphttp/metrics]
     logs:
       exporters: [debug, awscloudwatchlogs]

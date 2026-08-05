@@ -65,10 +65,24 @@ app/config changes — without the other.
 **Traces go to X-Ray, not raw CloudWatch.** CloudWatch has no native trace
 storage; AWS's trace backend is X-Ray, which surfaces in the CloudWatch
 console under Traces/ServiceLens. So "forward traces to CloudWatch" is
-implemented as the collector's `awsxray` exporter, while metrics
-(`awsemf`) and logs (`awscloudwatchlogs`) go to CloudWatch proper. This
-was confirmed with the user rather than assumed, since it changes which
-exporter and IAM permissions are needed.
+implemented as the collector's `awsxray` exporter, while logs
+(`awscloudwatchlogs`) go to CloudWatch proper. This was confirmed with the
+user rather than assumed, since it changes which exporter and IAM
+permissions are needed.
+
+**Metrics go through CloudWatch's OTLP endpoint, not the `awsemf` exporter.**
+Both deployments post metrics to
+`https://monitoring.<region>.amazonaws.com/v1/metrics` with the plain
+`otlphttp` exporter, signed by the `sigv4auth` extension, rather than
+encoding them as EMF log lines into a CloudWatch log group. This keeps the
+metric path ordinary OTLP — no AWS-specific exporter, no log group standing
+in for a metric store, and the demo's OTel attributes survive as labels
+instead of being flattened into EMF dimensions. The trade is that these
+metrics live in CloudWatch's OTel metric store and are queried with PromQL
+in Query Studio; they do not appear as a classic namespace under CloudWatch
+→ Metrics, so anything built against the old `OtelDemo` namespace needs
+rewriting as a PromQL query. The IAM action is `cloudwatch:PutMetricData`
+either way.
 
 **AWS exporters live in the collector's existing customization seam.**
 `src/otel-collector/otelcol-config-extras.yml` is already an

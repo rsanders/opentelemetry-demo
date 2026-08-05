@@ -80,7 +80,6 @@ export interface CatalogContext {
   /** Public URL of the demo, used for browser-side telemetry. */
   publicUrl: string;
   appLogGroupName: string;
-  collectorLogGroupName: string;
 }
 
 /**
@@ -792,7 +791,6 @@ export function buildCatalog(ctx: CatalogContext): ServiceSpec[] {
             GOMEMLIMIT: '160MiB',
             AWS_REGION: ctx.config.region,
             APP_LOG_GROUP: ctx.appLogGroupName,
-            OTELCOL_LOG_GROUP: ctx.collectorLogGroupName,
           },
         },
       ],

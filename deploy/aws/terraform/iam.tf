@@ -25,14 +25,15 @@ data "aws_iam_policy_document" "otel_export" {
     ]
     resources = [
       "${aws_cloudwatch_log_group.app.arn}:*",
-      "${aws_cloudwatch_log_group.collector.arn}:*",
     ]
   }
 
   statement {
-    sid       = "CloudWatchMetrics"
-    actions   = ["cloudwatch:PutMetricData"]
-    resources = ["*"] # PutMetricData does not support resource-level restriction
+    sid     = "CloudWatchMetrics"
+    actions = ["cloudwatch:PutMetricData"]
+    # What the CloudWatch OTLP metrics endpoint authorizes SigV4-signed
+    # requests against; it does not support resource-level restriction.
+    resources = ["*"]
   }
 
   statement {
