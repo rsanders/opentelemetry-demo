@@ -41,6 +41,19 @@ extensions:
     region: {{ aws_region }}
 
 processors:
+  # Tells CloudWatch which log group holds a service's logs, so the "Logs"
+  # panel on a trace/metric detail page (X-Ray, Application Signals,
+  # Transaction Search) knows where to search -- without it, the console has
+  # no way to find the correlated logs even though the trace_id/span_id are
+  # already present on every log record. Every service here shares one log
+  # group (distinguished only by stream -- see the otlphttp/logs/* exporters
+  # below), so the same static value is correct for all of them.
+  # https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Application-Signals-Enable-EC2Main.html
+  resource/aws_log_correlation:
+    attributes:
+      - key: aws.log.group.names
+        value: '{{ app_log_group }}'
+        action: upsert
   # CloudWatch's OTLP metrics endpoint only supports Counter, Gauge, and
   # Histogram (https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/metrics-otel-send.html#metrics-otel-send-types).
   # Anything else -- Summary, ExponentialHistogram, or a typeless metric shell
@@ -172,9 +185,10 @@ service:
       level: debug
   pipelines:
     traces:
+      processors: [resourcedetection, memory_limiter, resource/aws_log_correlation, transform/sanitize_spans, gen_ai_normalizer]
       exporters: [debug, span_metrics, otlphttp/traces]
     metrics:
-      processors: [resourcedetection, memory_limiter, filter/cloudwatch_metrics, metric_start_time, batch/metrics]
+      processors: [resourcedetection, memory_limiter, resource/aws_log_correlation, filter/cloudwatch_metrics, metric_start_time, batch/metrics]
       exporters: [debug, otlphttp/metrics]
     logs:
       exporters: [debug, routing/cloudwatch_logs]

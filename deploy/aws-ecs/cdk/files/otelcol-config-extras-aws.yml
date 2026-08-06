@@ -63,6 +63,26 @@ processors:
   # reading the task metadata endpoint to add aws.ecs.* resource attributes.
   resourcedetection:
     detectors: [env, ecs, system]
+  # Tells CloudWatch which log group holds a service's logs, so the "Logs"
+  # panel on a trace/metric detail page (X-Ray, Application Signals,
+  # Transaction Search) knows where to search -- without it, the console has
+  # no way to find the correlated logs even though the trace_id/span_id are
+  # already present on every log record. Every service here shares one log
+  # group (distinguished only by stream -- see the otlphttp/logs/* exporters
+  # below), so the same static value is correct for all of them.
+  # https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Application-Signals-Enable-EC2Main.html
+  #
+  # Caveat: community reports (e.g. https://dev.classmethod.jp/en/articles/cloudwatch-application-signals-trace-log-correlation/)
+  # say the `ecs` resourcedetection detector above breaks this correlation
+  # outright for reasons that aren't documented anywhere -- unconfirmed
+  # against any AWS source. If log correlation still fails after this change
+  # on ECS specifically (but works on the EC2 deployment, which has no `ecs`
+  # detector), that detector is the next thing to suspect.
+  resource/aws_log_correlation:
+    attributes:
+      - key: aws.log.group.names
+        value: '${env:APP_LOG_GROUP}'
+        action: upsert
   # CloudWatch's OTLP metrics endpoint only supports Counter, Gauge, and
   # Histogram (https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/metrics-otel-send.html#metrics-otel-send-types).
   # Anything else -- Summary, ExponentialHistogram, or a typeless metric shell
@@ -349,13 +369,14 @@ service:
       level: debug
   pipelines:
     traces:
+      processors: [resourcedetection, memory_limiter, resource/aws_log_correlation, transform/sanitize_spans, gen_ai_normalizer]
       exporters: [debug, span_metrics, otlphttp/traces]
     metrics:
       # Same as the base list minus docker_stats and host_metrics, neither of
       # which Fargate can serve -- no Docker socket, and no host filesystem to
       # mount at /hostfs.
       receivers: [otlp, span_metrics, http_check/frontend-proxy, nginx, redis, postgresql, prometheus/ad]
-      processors: [resourcedetection, memory_limiter, filter/cloudwatch_metrics, metric_start_time, batch/metrics]
+      processors: [resourcedetection, memory_limiter, resource/aws_log_correlation, filter/cloudwatch_metrics, metric_start_time, batch/metrics]
       exporters: [debug, otlphttp/metrics]
     logs:
       exporters: [debug, routing/cloudwatch_logs]
