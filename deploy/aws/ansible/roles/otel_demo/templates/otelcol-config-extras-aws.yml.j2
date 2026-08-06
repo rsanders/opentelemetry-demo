@@ -14,10 +14,34 @@ extensions:
     region: {{ aws_region }}
 
 processors:
+  # CloudWatch's OTLP metrics endpoint only supports Counter, Gauge, and
+  # Histogram (https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/metrics-otel-send.html#metrics-otel-send-types).
+  # Anything else -- Summary, ExponentialHistogram, or a typeless metric shell
+  # with no data points -- gets rejected per-metric with "Invalid OTel metric
+  # type" on an otherwise-successful request. Drop those before they're sent
+  # rather than pay for a rejected request every export interval.
+  filter/cloudwatch_metrics:
+    error_mode: ignore
+    metric_conditions:
+      - 'metric.type == METRIC_DATA_TYPE_SUMMARY'
+      - 'metric.type == METRIC_DATA_TYPE_EXPONENTIAL_HISTOGRAM'
+      - 'metric.type == METRIC_DATA_TYPE_NONE'
+  # CloudWatch rejects cumulative points with no StartTimeUnixNano, and the
+  # prometheus/ad receiver (like prometheus receivers generally) doesn't set
+  # one. subtract_initial_point over the true_reset_point default: it never
+  # emits a start==end point (some backends reject those), and it's
+  # stateless, which matters since the collector is force-recreated on every
+  # deploy. Trade-off: each series' first point after a restart is dropped.
+  metric_start_time:
+    strategy: subtract_initial_point
   # Sized to stay inside the metrics endpoint's per-request limits of 1000
-  # data points and 1 MB uncompressed.
+  # data points and 1 MB uncompressed. send_batch_max_size must be set too --
+  # send_batch_size alone is only the flush trigger, not a cap, so a burst
+  # that crosses it before a flush would otherwise go out as one oversized
+  # request instead of being split.
   batch/metrics:
     send_batch_size: 200
+    send_batch_max_size: 200
     timeout: 10s
 
 exporters:
@@ -43,7 +67,7 @@ service:
     traces:
       exporters: [debug, span_metrics, awsxray]
     metrics:
-      processors: [resourcedetection, memory_limiter, batch/metrics]
+      processors: [resourcedetection, memory_limiter, filter/cloudwatch_metrics, metric_start_time, batch/metrics]
       exporters: [debug, otlphttp/metrics]
     logs:
       exporters: [debug, awscloudwatchlogs]
