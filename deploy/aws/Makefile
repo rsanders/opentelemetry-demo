@@ -1,7 +1,27 @@
 TF_DIR := terraform
 ANSIBLE_DIR := ansible
+REPO_DEST := /opt/otel-demo
 
-.PHONY: fmt validate plan up update down outputs ssh ssm
+# Which container `status`/`logs`/`shell` act on, matching the sibling
+# deploy/aws-ecs Makefile's SERVICE variable.
+SERVICE ?= frontend-proxy
+EXEC_SHELL ?= /bin/sh
+
+# The same compose invocation Ansible starts the stack with (see
+# ansible/group_vars/all.yml and roles/otel_demo), so `ps`/`logs`/`exec` here
+# address the same project rather than a partial view of it. The profile comes
+# from the Terraform-generated inventory; before the first `make up` there is
+# no inventory yet, so fall back to the "core" default.
+COMPOSE_FILES_core := -f compose.yaml
+COMPOSE_FILES_full := -f compose.yaml -f compose.full.yaml
+COMPOSE_PROFILE := $(shell awk -F= '/^compose_profile=/{print $$2}' $(ANSIBLE_DIR)/inventory.ini 2>/dev/null)
+COMPOSE := docker compose $(COMPOSE_FILES_$(or $(COMPOSE_PROFILE),core)) -f compose.aws-override.yml
+
+# Runs a command on the instance over the Terraform-generated SSH key.
+# $(1) extra ssh flags, $(2) the command to run in the repo directory.
+remote = cd $(TF_DIR) && bash -c "$$(terraform output -raw ssh_command) $(1) 'cd $(REPO_DEST) && $(2)'"
+
+.PHONY: fmt validate plan up update down outputs status logs shell ssh ssm
 
 fmt: ## Format the Terraform files
 	cd $(TF_DIR) && terraform fmt -recursive
@@ -32,6 +52,17 @@ down: ## Tear down all AWS resources created by this stack
 
 outputs: ## Print the app URL, ssh command, etc.
 	cd $(TF_DIR) && terraform output
+
+status: ## Show the state of every container on the instance
+	@$(call remote,,$(COMPOSE) ps)
+
+logs: ## Tail one service's container logs (SERVICE=cart)
+	@$(call remote,-t,$(COMPOSE) logs --follow --tail=100 $(SERVICE))
+
+# The ECS deployment's `make shell` opens a shell in a task's container; this
+# is the compose equivalent. Use `make ssh`/`make ssm` for the host itself.
+shell: ## Open a shell in a running container (SERVICE=cart)
+	@$(call remote,-t,$(COMPOSE) exec $(SERVICE) $(EXEC_SHELL))
 
 ssh: ## SSH into the demo instance
 	cd $(TF_DIR) && bash -c "$$(terraform output -raw ssh_command)"

@@ -46,7 +46,8 @@ deployed into the same account at the same time without colliding.
 | Service discovery         | Docker bridge network, bare container names          | Cloud Map private DNS, `<svc>.otel-demo-ecs.local` |
 | Config files              | Bind-mounted from the repo                           | Seeded into a task volume by an init container     |
 | Public address            | Elastic IP on the instance                           | Elastic IP on a network load balancer              |
-| Shell access              | `make ssh` / `make ssm`                              | `make shell` (ECS Exec)                            |
+| Container shell           | `make shell` (compose exec over SSH)                 | `make shell` (ECS Exec)                            |
+| Host shell                | `make ssh` / `make ssm`                              | n/a — there is no host                             |
 | Host/Docker metrics       | `host_metrics` + `docker_stats` receivers            | Dropped — Fargate exposes neither                  |
 | Blast radius of a restart | Whole host                                           | One service                                        |
 

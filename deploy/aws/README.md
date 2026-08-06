@@ -165,9 +165,29 @@ before the subnet/VPC can be deleted; this is automatic, not a hang.
   which lists only classic namespaces — the OTLP endpoint feeds CloudWatch's
   separate OTel metric store.
 
+## Operating it
+
+```bash
+make status                    # state of every container on the instance
+make logs SERVICE=cart         # tail one service's container logs
+make shell SERVICE=cart        # open a shell inside a running container
+```
+
+These are the same three targets the sibling [`../aws-ecs/`](../aws-ecs/)
+deployment exposes, so the two stacks are driven the same way. Here they run
+`docker compose ps` / `logs` / `exec` on the instance over the
+Terraform-generated SSH key, using the same compose file set Ansible started
+the stack with — so they see the whole project, not just `compose.yaml`.
+`SERVICE` defaults to `frontend-proxy`; `EXEC_SHELL` (default `/bin/sh`)
+overrides the shell for containers that ship a different one.
+
+Container logs live on the instance under Docker's `json-file` driver, not in
+CloudWatch — `/otel-demo/logs` holds only what the collector forwards through
+its `awscloudwatchlogs` exporter. `make logs` is the way to see raw stdout.
+
 ## Logging into the instance
 
-Two ways in:
+`make shell` gets you into a container; these get you onto the host itself:
 
 ```bash
 make ssh   # SSH, using the Terraform-generated key -- what Ansible itself uses
@@ -241,8 +261,15 @@ the resulting key the same way) rather than leaving it drifted long-term.
 ## Troubleshooting
 
 ```bash
-make ssh                                                          # or `make ssm`
-docker compose -f compose.yaml -f compose.aws-override.yml ps     # from /opt/otel-demo on the instance
+make status                        # which containers are up, and which are restarting
+make logs SERVICE=otel-collector   # then read the logs of whichever one is not
+```
+
+Or drive compose by hand, after `make ssh` (or `make ssm`), from
+`/opt/otel-demo` on the instance:
+
+```bash
+docker compose -f compose.yaml -f compose.aws-override.yml ps
 docker compose -f compose.yaml -f compose.aws-override.yml logs otel-collector
 ```
 
