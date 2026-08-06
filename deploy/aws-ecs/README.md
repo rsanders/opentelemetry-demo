@@ -9,9 +9,34 @@ sees into CloudWatch:
   signed with the `sigv4auth` extension. These land in CloudWatch's OTel metric
   store and are queried with PromQL in Query Studio — not as a classic
   namespace in the Metrics console.
-- **Logs** → CloudWatch Logs, via the `awscloudwatchlogs` exporter
-- **Traces** → AWS X-Ray, via the `awsxray` exporter (visible in the CloudWatch
-  console under Traces / ServiceLens — CloudWatch itself has no trace store)
+- **Logs** → CloudWatch Logs, via one `otlphttp` exporter per service, all
+  pointed at CloudWatch's OpenTelemetry logs endpoint
+  (`https://logs.<region>.amazonaws.com/v1/logs`), also `sigv4auth`-signed.
+  The log group/stream go in the `x-aws-log-group`/`x-aws-log-stream` headers
+  rather than the URL, and those headers are static per exporter — there's no
+  per-record templating on this endpoint — so a `routing` connector splits the
+  logs pipeline by `service.name` first, giving each service its own log
+  stream under `/otel-demo-ecs/logs` instead of one shared stream. A service
+  not in that routing table (see `cdk/files/otelcol-config-extras-aws.yml`)
+  still gets exported, just bucketed into a shared `other` stream.
+- **Traces** → CloudWatch, via the `otlphttp` exporter pointed at CloudWatch's
+  OpenTelemetry traces endpoint (`https://xray.<region>.amazonaws.com/v1/traces`),
+  also `sigv4auth`-signed (SigV4 service name `xray` — same X-Ray ingestion API
+  as the classic exporter, different wire format). Visible in the CloudWatch
+  console under Traces / ServiceLens. Requires [Transaction
+  Search](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Transaction-Search.html)
+  enabled on the account — an account-wide, one-time setting, not scoped to
+  this deployment's own resources. `cdk deploy` bootstraps it
+  (`otel-demo-ecs-stack.ts`, "transaction search" section): a CloudWatch Logs
+  resource policy letting X-Ray write into the
+  `aws/spans`/`/aws/application-signals/data` log groups, plus
+  `AWS::XRay::TransactionSearchConfig` (`aws-cdk-lib/aws-xray`'s
+  `CfnTransactionSearchConfig` — this one's a plain L1 construct, no extra
+  provider needed the way the sibling Terraform stack needs `hashicorp/awscc`,
+  since CDK is CloudFormation-native already). If it's somehow not applied,
+  the collector logs `Message=The OTLP API is supported with CloudWatch Logs
+  as a Trace Segment Destination` (per AWS's troubleshooting docs) and traces
+  are dropped.
 
 Everything is defined in AWS CDK (TypeScript) under [`cdk/`](cdk/) — there is
 no Terraform and no Ansible here. One `cdk deploy` creates the VPC, ECS
@@ -182,6 +207,18 @@ install it without a GUI sudo prompt.
 `make ssh` and `make ssm` are aliases for `make shell`, kept so the target names
 line up with the sibling stack. There is no host to SSH into here — every
 service is a Fargate task.
+
+```bash
+make otelcol-config              # print the otel-collector's fully resolved/merged config
+```
+
+This is the same target the sibling [`../aws/`](../aws/) deployment exposes.
+It runs the collector's own `print-config` subcommand (over ECS Exec, same as
+`make shell`) with the same `--config` layers (and feature gate) the task is
+actually launched with, so what it prints is the config after
+`otelcol-config.yml` and `otelcol-config-extras.yml` are deep-merged — not
+either file on its own. Useful for confirming a change to the init container's
+rendered extras file actually made it into the running task.
 
 The `flagd` service carries two containers, `flagd` and `flagd-ui`; reach the
 second one with `make shell SERVICE=flagd CONTAINER=flagd-ui`.

@@ -17,7 +17,7 @@ SERVICE ?= frontend-proxy
 CONTAINER ?= $(SERVICE)
 EXEC_SHELL ?= /bin/sh
 
-.PHONY: install fmt validate plan bootstrap up update down outputs status logs shell ssh ssm
+.PHONY: install fmt validate plan bootstrap up update down outputs status logs shell otelcol-config ssh ssm
 
 install: ## Install the CDK app's dependencies
 	cd $(CDK_DIR) && npm ci
@@ -64,6 +64,18 @@ shell: ## Open a shell in a running container (SERVICE=cart)
 	if [ "$$task" = "None" ] || [ -z "$$task" ]; then echo "No running task for service '$(SERVICE)'"; exit 1; fi; \
 	aws ecs execute-command --cluster $(STACK) --task "$$task" --container $(CONTAINER) \
 		--region $(REGION) --interactive --command "$(EXEC_SHELL)"
+
+# print-config resolves the same --config layers (and feature gate) the task
+# is actually launched with (see lib/services.ts's otel-collector command) and
+# prints the merged result -- the config after otelcol-config.yml and
+# otelcol-config-extras.yml are deep-merged, not either file on its own.
+otelcol-config: ## Print the otel-collector's fully resolved/merged configuration
+	@task=$$(aws ecs list-tasks --cluster $(STACK) --service-name otel-collector --region $(REGION) \
+		--query 'taskArns[0]' --output text); \
+	if [ "$$task" = "None" ] || [ -z "$$task" ]; then echo "No running task for service 'otel-collector'"; exit 1; fi; \
+	aws ecs execute-command --cluster $(STACK) --task "$$task" --container otel-collector \
+		--region $(REGION) --interactive \
+		--command "/otelcol-contrib print-config --config=/etc/otelcol-config.yml --config=/etc/otelcol-config-extras.yml --feature-gates=service.profilesSupport"
 
 # Kept so the target names match the sibling deploy/aws Makefile. There is no
 # host to SSH into here -- every service is a Fargate task.

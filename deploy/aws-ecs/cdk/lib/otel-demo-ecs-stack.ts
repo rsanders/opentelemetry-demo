@@ -10,6 +10,7 @@ import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as servicediscovery from 'aws-cdk-lib/aws-servicediscovery';
+import * as xray from 'aws-cdk-lib/aws-xray';
 import { Construct } from 'constructs';
 
 import { DemoConfig } from './config';
@@ -336,6 +337,12 @@ export class OtelDemoEcsStack extends Stack {
     collector.taskDefinition.addToTaskRolePolicy(
       new iam.PolicyStatement({
         sid: 'CloudWatchLogs',
+        // logs:PutLogEvents authorizes SigV4-signed requests to the
+        // CloudWatch logs OTLP endpoint the same way it did the old
+        // awscloudwatchlogs exporter -- both are ultimately CloudWatch Logs
+        // ingestion. Unchanged from before: kept as-is for the OTLP path
+        // since AWS doesn't document a different action set for it, and
+        // these were already sufficient.
         actions: [
           'logs:CreateLogGroup',
           'logs:CreateLogStream',
@@ -357,10 +364,90 @@ export class OtelDemoEcsStack extends Stack {
     collector.taskDefinition.addToTaskRolePolicy(
       new iam.PolicyStatement({
         sid: 'XRay',
+        // xray:PutTraceSegments authorizes SigV4-signed requests to the
+        // CloudWatch (X-Ray) traces OTLP endpoint the same way it did the old
+        // awsxray exporter -- both are the same X-Ray ingestion API
+        // underneath, just different wire formats. Unchanged from before:
+        // kept as-is for the OTLP path since AWS doesn't document a
+        // different action set for it. Separate from these grants: the OTLP
+        // traces endpoint additionally requires Transaction Search enabled
+        // on the account -- bootstrapped below.
         actions: ['xray:PutTraceSegments', 'xray:PutTelemetryRecords'],
         resources: ['*'], // X-Ray write actions do not support resource-level restriction
       }),
     );
+
+    // ---------------------------------------------------- transaction search
+    // Account-wide prerequisite for the collector's otlphttp/traces exporter
+    // to reach the CloudWatch traces OTLP endpoint at all -- without it, the
+    // endpoint rejects every request with "The OTLP API is supported with
+    // CloudWatch Logs as a Trace Segment Destination".
+    // https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Transaction-Search.html
+    //
+    // This is account/region-wide, not scoped to this stack's own resources
+    // -- there's only one account-wide config to enable, not a per-stack
+    // object. That makes it safe to enable from both deploy/aws-ecs and the
+    // sibling deploy/aws at once (a real scenario: the two are meant to be
+    // run side by side for comparison, see the README): CfnTransactionSearchConfig's
+    // underlying CloudFormation handler is an idempotent enable/update
+    // against the one thing that exists per account, so either stack
+    // applying its own copy converges on the same state rather than
+    // erroring; the resource policy below is named per-project, so both
+    // stacks' policies coexist rather than colliding. If both are applied,
+    // keep indexingPercentage equal across the two CDK/Terraform sources
+    // (both use AWS's own free-tier default, 1%) so neither's plan shows the
+    // other's value as drift to "fix".
+    //
+    // Lets X-Ray write the spans it receives into the aws/spans and
+    // application-signals log groups Transaction Search reads from. Whether
+    // those two log groups need to be pre-created isn't clearly documented --
+    // AWS's own setup docs list logs:CreateLogGroup/CreateLogStream/
+    // PutRetentionPolicy on both as a prerequisite for whichever identity
+    // runs the enable steps, which reads as the API calls creating them as a
+    // side effect rather than this stack needing an explicit logs.LogGroup
+    // for either. If `cdk deploy` fails here on AccessDenied for those
+    // actions, it's this stack's own deploying identity
+    // (AWS_PROFILE=skylab-sre-shared) that needs them, not the collector's
+    // task role above.
+    const transactionSearchLogsPolicy = new logs.ResourcePolicy(this, 'TransactionSearchLogsPolicy', {
+      resourcePolicyName: `${prefix}-transaction-search`,
+      policyStatements: [
+        new iam.PolicyStatement({
+          sid: 'TransactionSearchXRayAccess',
+          actions: ['logs:PutLogEvents'],
+          resources: [
+            `arn:aws:logs:${this.region}:${this.account}:log-group:aws/spans:*`,
+            `arn:aws:logs:${this.region}:${this.account}:log-group:/aws/application-signals/data:*`,
+          ],
+          principals: [new iam.ServicePrincipal('xray.amazonaws.com')],
+          // Scopes the grant to X-Ray acting on this account's own behalf,
+          // per AWS's example policy for this exact setup.
+          conditions: {
+            ArnLike: { 'aws:SourceArn': `arn:aws:xray:${this.region}:${this.account}:*` },
+            StringEquals: { 'aws:SourceAccount': this.account },
+          },
+        }),
+      ],
+    });
+    // Percentage of ingested spans indexed as searchable trace summaries (the
+    // rest are still fully ingested as structured logs under Transaction
+    // Search, just not indexed for the search/analytics UI). 1% is AWS's own
+    // free-tier default and is enough given full-fidelity log ingestion
+    // already covers every span.
+    //
+    // RemovalPolicy.RETAIN: this is an account-wide singleton, not something
+    // this stack necessarily created -- CloudFormation Create fails with
+    // Cloud Control API error AlreadyExists if Transaction Search was already
+    // enabled by anything else (another stack, the console, a teammate). On
+    // a shared account (AWS_PROFILE=skylab-sre-shared), letting `cdk destroy`
+    // delete this could silently disable Transaction Search for everyone
+    // else using the account, not just this deployment -- RETAIN orphans it
+    // (drops it from the stack, leaves the account setting alone) instead.
+    const transactionSearchConfig = new xray.CfnTransactionSearchConfig(this, 'TransactionSearchConfig', {
+      indexingPercentage: 1,
+    });
+    transactionSearchConfig.applyRemovalPolicy(RemovalPolicy.RETAIN);
+    transactionSearchConfig.node.addDependency(transactionSearchLogsPolicy);
 
     // ------------------------------------------------------------------ outputs
     new CfnOutput(this, 'AppUrl', {

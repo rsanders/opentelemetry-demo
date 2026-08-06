@@ -6,11 +6,38 @@
 # merge; only conflicting array keys are replaced) -- see the comment in the
 # original stub for details.
 
+# One CloudWatch log stream per service (below, via the routing connector):
+# the OTLP logs endpoint takes its log group/stream as static headers on the
+# exporter, not per-record, so getting one stream per service means one
+# exporter instance per service, statically listed here. Keep this in sync
+# with compose.yaml's OTEL_SERVICE_NAME values by hand -- a service missing
+# from this list still gets exported, just bucketed into the shared "other"
+# stream rather than its own. Mirror any change here in the sibling
+# deploy/aws-ecs/cdk/files/otelcol-config-extras-aws.yml, which has no
+# templating and so lists the same services out by hand instead of looping.
+{% set log_stream_services = [
+  'ad', 'cart', 'checkout', 'currency', 'email', 'frontend', 'frontend-proxy',
+  'image-provider', 'load-generator', 'payment', 'product-catalog', 'quote',
+  'recommendation', 'shipping', 'flagd', 'flagd-ui', 'telemetry-docs',
+] %}
+
 extensions:
   # Signs requests to the CloudWatch metrics OTLP endpoint. Credentials come
   # from the EC2 instance role through the default AWS SDK chain.
   sigv4auth/metrics:
     service: 'monitoring'
+    region: {{ aws_region }}
+  # Signs requests to the CloudWatch logs OTLP endpoint. Separate authenticator
+  # instance because the service name differs ("logs" vs "monitoring") -- each
+  # sigv4auth extension signs for exactly one service.
+  sigv4auth/logs:
+    service: 'logs'
+    region: {{ aws_region }}
+  # Signs requests to the CloudWatch (X-Ray) traces OTLP endpoint. The SigV4
+  # service name is "xray", not "traces" -- it's the same X-Ray ingestion API
+  # underneath, just reached via /v1/traces instead of the classic API.
+  sigv4auth/traces:
+    service: 'xray'
     region: {{ aws_region }}
 
 processors:
@@ -45,12 +72,19 @@ processors:
     timeout: 10s
 
 exporters:
-  awsxray:
-    region: {{ aws_region }}
-  awscloudwatchlogs:
-    region: {{ aws_region }}
-    log_group_name: '{{ app_log_group }}'
-    log_stream_name: 'otel-collector'
+  # CloudWatch's OpenTelemetry traces endpoint, replacing the awsxray exporter
+  # for the same reason metrics/logs moved off their AWS-specific exporters:
+  # plain OTLP/HTTP with SigV4 signing. Requires Transaction Search to be
+  # enabled on the account first -- without it, requests fail with "The OTLP
+  # API is supported with CloudWatch Logs as a Trace Segment Destination".
+  # That's an account-wide, one-time setting (not per-deployment IAM), not
+  # currently managed by this Terraform -- see the deployment README.
+  # https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Transaction-Search.html
+  otlphttp/traces:
+    traces_endpoint: https://xray.{{ aws_region }}.amazonaws.com/v1/traces
+    compression: gzip
+    auth:
+      authenticator: sigv4auth/traces
   # CloudWatch's OpenTelemetry metrics endpoint. This is plain OTLP/HTTP with
   # SigV4 signing rather than an AWS-specific exporter, so metrics land in
   # CloudWatch's OTel metric store -- queried with PromQL in Query Studio,
@@ -60,14 +94,98 @@ exporters:
     compression: gzip
     auth:
       authenticator: sigv4auth/metrics
+  # CloudWatch's OpenTelemetry logs endpoint, replacing the awscloudwatchlogs
+  # exporter for the same reason metrics moved off awsemf: it's plain
+  # OTLP/HTTP with SigV4 signing rather than an AWS-specific exporter. Unlike
+  # the metrics endpoint, the log group/stream aren't part of the URL -- they
+  # go in the x-aws-log-group/x-aws-log-stream headers instead (query params
+  # aren't supported on this endpoint), and those headers are static per
+  # exporter instance -- there's no per-record templating the way the old
+  # awscloudwatchlogs exporter's {ServiceName} placeholder did. Hence one
+  # exporter instance per service below, fed by the routing connector, so
+  # each still gets its own stream. logs_endpoint, not endpoint, for the same
+  # reason as metrics_endpoint: the otlphttp exporter appends /v1/logs to
+  # `endpoint`, which would double the path.
+  # https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CWL_HTTP_Endpoints_OTLP.html
+{% for svc in log_stream_services %}
+  otlphttp/logs/{{ svc }}:
+    logs_endpoint: https://logs.{{ aws_region }}.amazonaws.com/v1/logs
+    compression: gzip
+    headers:
+      x-aws-log-group: '{{ app_log_group }}'
+      x-aws-log-stream: '{{ svc }}'
+    auth:
+      authenticator: sigv4auth/logs
+{% endfor %}
+  # The collector's own self-telemetry (looped back through its otlp
+  # receiver, see service.telemetry below) carries service.name
+  # "otelcol-contrib", not one of the app services above.
+  otlphttp/logs/otel-collector:
+    logs_endpoint: https://logs.{{ aws_region }}.amazonaws.com/v1/logs
+    compression: gzip
+    headers:
+      x-aws-log-group: '{{ app_log_group }}'
+      x-aws-log-stream: 'otel-collector'
+    auth:
+      authenticator: sigv4auth/logs
+  # Catch-all for anything not in log_stream_services -- e.g. the "full"
+  # compose profile's accounting/fraud-detection/kafka, or a new service that
+  # hasn't been added to the list above yet. Better than silently dropping it.
+  otlphttp/logs/other:
+    logs_endpoint: https://logs.{{ aws_region }}.amazonaws.com/v1/logs
+    compression: gzip
+    headers:
+      x-aws-log-group: '{{ app_log_group }}'
+      x-aws-log-stream: 'other'
+    auth:
+      authenticator: sigv4auth/logs
+
+connectors:
+  # Splits the logs pipeline by service.name so each service's exporter
+  # (above) can point at its own static x-aws-log-stream header -- see the
+  # comment on the otlphttp/logs/* exporters for why this indirection exists.
+  routing/cloudwatch_logs:
+    error_mode: ignore
+    default_pipelines: [logs/other]
+    table:
+{% for svc in log_stream_services %}
+      - condition: resource.attributes["service.name"] == "{{ svc }}"
+        pipelines: [logs/{{ svc }}]
+{% endfor %}
+      - condition: resource.attributes["service.name"] == "otelcol-contrib"
+        pipelines: [logs/otel-collector]
 
 service:
-  extensions: [sigv4auth/metrics]
+  extensions: [sigv4auth/metrics, sigv4auth/logs, sigv4auth/traces]
+  # The base config's telemetry.metrics/logs already loop the collector's own
+  # self-telemetry back through its otlp receiver (127.0.0.1, via
+  # OTEL_COLLECTOR_HOST/PORT_HTTP), so it rides the same metrics/logs
+  # pipelines -- and thus the same CloudWatch exporters -- as everything else
+  # with no further wiring. What's left is the *level*: the defaults (Normal
+  # for metrics, Info for logs) omit some internal telemetry. Raising both
+  # gets the full set, at the cost of materially more self-generated log
+  # volume (and CloudWatch Logs ingestion cost) from the debug level.
+  telemetry:
+    metrics:
+      level: detailed
+    logs:
+      level: debug
   pipelines:
     traces:
-      exporters: [debug, span_metrics, awsxray]
+      exporters: [debug, span_metrics, otlphttp/traces]
     metrics:
       processors: [resourcedetection, memory_limiter, filter/cloudwatch_metrics, metric_start_time, batch/metrics]
       exporters: [debug, otlphttp/metrics]
     logs:
-      exporters: [debug, awscloudwatchlogs]
+      exporters: [debug, routing/cloudwatch_logs]
+{% for svc in log_stream_services %}
+    logs/{{ svc }}:
+      receivers: [routing/cloudwatch_logs]
+      exporters: [otlphttp/logs/{{ svc }}]
+{% endfor %}
+    logs/otel-collector:
+      receivers: [routing/cloudwatch_logs]
+      exporters: [otlphttp/logs/otel-collector]
+    logs/other:
+      receivers: [routing/cloudwatch_logs]
+      exporters: [otlphttp/logs/other]

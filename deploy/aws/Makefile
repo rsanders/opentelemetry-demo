@@ -21,7 +21,7 @@ COMPOSE := docker compose $(COMPOSE_FILES_$(or $(COMPOSE_PROFILE),core)) -f comp
 # $(1) extra ssh flags, $(2) the command to run in the repo directory.
 remote = cd $(TF_DIR) && bash -c "$$(terraform output -raw ssh_command) $(1) 'cd $(REPO_DEST) && $(2)'"
 
-.PHONY: fmt validate plan up update down outputs status logs shell ssh ssm
+.PHONY: fmt validate plan up update down outputs status logs shell otelcol-config ssh ssm
 
 fmt: ## Format the Terraform files
 	cd $(TF_DIR) && terraform fmt -recursive
@@ -63,6 +63,13 @@ logs: ## Tail one service's container logs (SERVICE=cart)
 # is the compose equivalent. Use `make ssh`/`make ssm` for the host itself.
 shell: ## Open a shell in a running container (SERVICE=cart)
 	@$(call remote,-t,$(COMPOSE) exec $(SERVICE) $(EXEC_SHELL))
+
+# print-config resolves the same --config layers (and feature gate) the
+# container is actually launched with (see compose.yaml's otel-collector
+# command) and prints the merged result -- the config after otelcol-config.yml
+# and otelcol-config-extras.yml are deep-merged, not either file on its own.
+otelcol-config: ## Print the otel-collector's fully resolved/merged configuration
+	@$(call remote,-t,$(COMPOSE) exec otel-collector /otelcol-contrib print-config --config=/etc/otelcol-config.yml --config=/etc/otelcol-config-extras.yml --feature-gates=service.profilesSupport)
 
 ssh: ## SSH into the demo instance
 	cd $(TF_DIR) && bash -c "$$(terraform output -raw ssh_command)"

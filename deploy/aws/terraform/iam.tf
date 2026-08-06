@@ -17,6 +17,11 @@ resource "aws_iam_role" "instance" {
 data "aws_iam_policy_document" "otel_export" {
   statement {
     sid = "CloudWatchLogs"
+    # logs:PutLogEvents authorizes SigV4-signed requests to the CloudWatch
+    # logs OTLP endpoint the same way it did the old awscloudwatchlogs
+    # exporter -- both are ultimately CloudWatch Logs ingestion. Unchanged
+    # from before: kept as-is for the OTLP path since AWS doesn't document a
+    # different action set for it, and these were already sufficient.
     actions = [
       "logs:CreateLogGroup",
       "logs:CreateLogStream",
@@ -38,6 +43,14 @@ data "aws_iam_policy_document" "otel_export" {
 
   statement {
     sid = "XRay"
+    # xray:PutTraceSegments authorizes SigV4-signed requests to the CloudWatch
+    # (X-Ray) traces OTLP endpoint the same way it did the old awsxray
+    # exporter -- both are the same X-Ray ingestion API underneath, just
+    # different wire formats. Unchanged from before: kept as-is for the OTLP
+    # path since AWS doesn't document a different action set for it. Separate
+    # from these grants: the OTLP traces endpoint additionally requires
+    # Transaction Search enabled on the account -- bootstrapped in
+    # transaction-search.tf.
     actions = [
       "xray:PutTraceSegments",
       "xray:PutTelemetryRecords",

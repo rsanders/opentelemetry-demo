@@ -9,6 +9,12 @@ provider "aws" {
   }
 }
 
+# Used only for awscc_xray_transaction_search_config (transaction-search.tf)
+# -- see the comment on the awscc provider in versions.tf for why.
+provider "awscc" {
+  region = var.region
+}
+
 data "aws_availability_zones" "available" {
   state = "available"
 }

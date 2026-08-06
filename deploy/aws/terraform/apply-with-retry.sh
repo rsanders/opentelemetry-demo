@@ -1,13 +1,31 @@
 #!/usr/bin/env bash
-# Wraps `terraform apply` to self-heal a specific, reproduced provider quirk:
-# right after a `terraform destroy`, re-creating the /otel-demo/* CloudWatch
-# log groups can fail with ResourceAlreadyExistsException even on a fresh
-# apply -- the CreateLogGroup call actually succeeds on AWS's side, but the
-# provider doesn't record it in state (looks like an internal request retry
-# racing the real response). A plain sleep-and-retry doesn't help, since the
-# resource genuinely already exists; the fix is to import it into state and
-# retry the apply. Scoped defensively to ResourceAlreadyExistsException only
-# -- any other failure is surfaced immediately, not silently retried.
+# Wraps `terraform apply` to self-heal reproduced "already exists" quirks
+# where the resource genuinely already exists on AWS's side but not yet in
+# Terraform's state, so a plain sleep-and-retry doesn't help -- the fix in
+# each case is to import the resource into state and retry the apply. Scoped
+# defensively to these known error signatures only -- any other failure is
+# surfaced immediately, not silently retried.
+#
+# 1. Right after a `terraform destroy`, re-creating the /otel-demo/*
+#    CloudWatch log groups can fail with ResourceAlreadyExistsException even
+#    on a fresh apply -- the CreateLogGroup call actually succeeds on AWS's
+#    side, but the provider doesn't record it in state (looks like an
+#    internal request retry racing the real response).
+#
+# 2. aws_cloudwatch_log_stream.app[*] (cloudwatch.tf) can fail the same way
+#    with ResourceAlreadyExistsException. Reproduced concretely for the
+#    "otel-collector" stream, a leftover from the retired awscloudwatchlogs
+#    exporter (which auto-created it); could plausibly recur for any stream
+#    name after a partial apply, same root cause as #1.
+#
+# 3. awscc_xray_transaction_search_config (transaction-search.tf) can fail to
+#    *create* with Cloud Control API ErrorCode AlreadyExists, because
+#    Transaction Search is an account/region-wide singleton -- if it was
+#    already enabled by anything else (another stack, the console, a
+#    different tool) before this ran, Create rejects it outright rather than
+#    converging like the underlying xray:UpdateTraceSegmentDestination API
+#    would. Importing it (by account ID, the only identifier this resource
+#    takes) adopts the existing config instead.
 set -u
 cd "$(dirname "$0")"
 
@@ -20,27 +38,61 @@ for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
     exit 0
   fi
 
-  if ! echo "$OUTPUT" | grep -q "ResourceAlreadyExistsException"; then
-    echo ">>> terraform apply failed for a reason other than ResourceAlreadyExistsException; not retrying." >&2
-    exit "$STATUS"
-  fi
+  # Checked before the log-group branch below: both errors share the
+  # ResourceAlreadyExistsException string, so the more specific resource type
+  # has to be matched first or a log-stream failure would fall into the
+  # log-group branch's regex and silently match nothing.
+  if echo "$OUTPUT" | grep -q "ResourceAlreadyExistsException" && echo "$OUTPUT" | grep -q "aws_cloudwatch_log_stream\."; then
+    echo ">>> apply failed creating a log stream that already exists (attempt $attempt/$MAX_ATTEMPTS) -- importing it, then retrying..." >&2
 
-  echo ">>> apply failed with ResourceAlreadyExistsException (attempt $attempt/$MAX_ATTEMPTS) -- importing the resource(s) it actually created on AWS's side, then retrying..." >&2
+    LOG_GROUP=$(terraform state show aws_cloudwatch_log_group.app 2>/dev/null | grep -E '^\s*name\s*=' | head -1 | sed -E 's/.*= *"(.*)"/\1/')
+    if [ -z "$LOG_GROUP" ]; then
+      echo "    could not determine the log group name from state; not retrying." >&2
+      exit "$STATUS"
+    fi
+    echo "$OUTPUT" | grep -oE 'with aws_cloudwatch_log_stream\.[a-zA-Z0-9_]+\["[^"]+"\]' | sed -E 's/^with //' | sort -u | while read -r addr; do
+      stream_name=$(echo "$addr" | grep -oE '\["[^"]+"\]' | tr -d '["]')
+      if terraform state list | grep -qxF "$addr"; then
+        echo "    $addr already in state, skipping import"
+      else
+        echo "    importing $addr <- $LOG_GROUP:$stream_name"
+        terraform import "$addr" "$LOG_GROUP:$stream_name" || true
+      fi
+    done
+  elif echo "$OUTPUT" | grep -q "ResourceAlreadyExistsException"; then
+    echo ">>> apply failed with ResourceAlreadyExistsException (attempt $attempt/$MAX_ATTEMPTS) -- importing the resource(s) it actually created on AWS's side, then retrying..." >&2
 
-  ADDRS=$(echo "$OUTPUT" | grep -oE "with aws_cloudwatch_log_group\.[a-zA-Z0-9_]+")
-  NAMES=$(echo "$OUTPUT" | grep -oE "Log Group \([^)]+\)" | sed -E 's/Log Group \((.*)\)/\1/')
-  IMPORTED_ANY=false
-  paste -d'|' <(echo "$ADDRS") <(echo "$NAMES") | while IFS='|' read -r with_addr name; do
-    addr=$(echo "$with_addr" | grep -oE "aws_cloudwatch_log_group\.[a-zA-Z0-9_]+")
-    if [ -n "$addr" ] && [ -n "$name" ]; then
+    ADDRS=$(echo "$OUTPUT" | grep -oE "with aws_cloudwatch_log_group\.[a-zA-Z0-9_]+")
+    NAMES=$(echo "$OUTPUT" | grep -oE "Log Group \([^)]+\)" | sed -E 's/Log Group \((.*)\)/\1/')
+    paste -d'|' <(echo "$ADDRS") <(echo "$NAMES") | while IFS='|' read -r with_addr name; do
+      addr=$(echo "$with_addr" | grep -oE "aws_cloudwatch_log_group\.[a-zA-Z0-9_]+")
+      if [ -n "$addr" ] && [ -n "$name" ]; then
+        if terraform state list | grep -qx "$addr"; then
+          echo "    $addr already in state, skipping import"
+        else
+          echo "    importing $addr <- $name"
+          terraform import "$addr" "$name" || true
+        fi
+      fi
+    done
+  elif echo "$OUTPUT" | grep -q "awscc_xray_transaction_search_config" && echo "$OUTPUT" | grep -q "AlreadyExists"; then
+    echo ">>> apply failed creating awscc_xray_transaction_search_config with AlreadyExists (attempt $attempt/$MAX_ATTEMPTS) -- Transaction Search is already enabled on this account by something else; importing the existing config, then retrying..." >&2
+
+    ADDR=$(echo "$OUTPUT" | grep -oE "with awscc_xray_transaction_search_config\.[a-zA-Z0-9_]+" | head -1)
+    if [ -n "$ADDR" ]; then
+      addr=$(echo "$ADDR" | grep -oE "awscc_xray_transaction_search_config\.[a-zA-Z0-9_]+")
       if terraform state list | grep -qx "$addr"; then
         echo "    $addr already in state, skipping import"
       else
-        echo "    importing $addr <- $name"
-        terraform import "$addr" "$name" || true
+        account_id=$(aws sts get-caller-identity --query Account --output text)
+        echo "    importing $addr <- account $account_id"
+        terraform import "$addr" "$account_id" || true
       fi
     fi
-  done
+  else
+    echo ">>> terraform apply failed for a reason other than the known already-exists quirks; not retrying." >&2
+    exit "$STATUS"
+  fi
 
   sleep 5
 done
