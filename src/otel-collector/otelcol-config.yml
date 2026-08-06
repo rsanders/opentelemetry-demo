@@ -191,6 +191,17 @@ processors:
           # Upstream Issue: https://github.com/open-telemetry/opentelemetry-collector/issues/15221
           - set(attributes["otelcol_signal"], attributes["otelcol.signal"]) where attributes["otelcol.signal"] != nil and not IsMap(attributes["otelcol.signal"])
           - delete_key(attributes, "otelcol.signal") where attributes["otelcol_signal"] != nil
+      - context: log
+        statements:
+          # Envoy's OpenTelemetry access logger can only emit string_value
+          # attributes, but several HTTP semantic convention attributes are
+          # typed as int. Coerce them here so frontend-proxy access logs
+          # match the semconv types.
+          - set(attributes["http.response.status_code"], Int(attributes["http.response.status_code"])) where IsString(attributes["http.response.status_code"])
+          - set(attributes["http.request.body.size"], Int(attributes["http.request.body.size"])) where IsString(attributes["http.request.body.size"])
+          - set(attributes["http.response.body.size"], Int(attributes["http.response.body.size"])) where IsString(attributes["http.response.body.size"])
+          - set(attributes["server.port"], Int(attributes["server.port"])) where IsString(attributes["server.port"])
+          - set(attributes["client.port"], Int(attributes["client.port"])) where IsString(attributes["client.port"])
   gen_ai_normalizer:
     sources:
       - name: openllmetry

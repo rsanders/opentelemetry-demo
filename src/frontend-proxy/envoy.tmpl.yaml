@@ -36,48 +36,65 @@ static_resources:
                       domains:
                         - "*"
                       routes:
-                        - match: { prefix: "/otlp-http/" }
+                        - name: "/otlp-http/*"
+                          match: { prefix: "/otlp-http/" }
                           route: { cluster: opentelemetry_collector_http, prefix_rewrite: "/" }
-                        - match: { path: "/jaeger" }
+                        - name: "/jaeger"
+                          match: { path: "/jaeger" }
                           redirect: { path_redirect: "/jaeger/" }
-                        - match: { prefix: "/jaeger/" }
+                        - name: "/jaeger/*"
+                          match: { prefix: "/jaeger/" }
                           route: { cluster: jaeger }
-                        - match: { path: "/grafana" }
+                        - name: "/grafana"
+                          match: { path: "/grafana" }
                           redirect: { path_redirect: "/grafana/" }
-                        - match: { prefix: "/grafana/" }
+                        - name: "/grafana/*"
+                          match: { prefix: "/grafana/" }
                           route: { cluster: grafana }
-                        - match: { path: "/opamp" }
+                        - name: "/opamp"
+                          match: { path: "/opamp" }
                           redirect: { path_redirect: "/opamp/" }
-                        - match: { prefix: "/opamp/" }
+                        - name: "/opamp/*"
+                          match: { prefix: "/opamp/" }
                           route: { cluster: opamp, prefix_rewrite: "/" }
-                        - match: { path: "/telemetry" }
+                        - name: "/telemetry"
+                          match: { path: "/telemetry" }
                           redirect: { path_redirect: "/telemetry/" }
-                        - match: { prefix: "/telemetry/" }
+                        - name: "/telemetry/*"
+                          match: { prefix: "/telemetry/" }
                           route: { cluster: telemetry-docs, prefix_rewrite: "/" }
-                        - match: { prefix: "/images/" }
+                        - name: "/images/*"
+                          match: { prefix: "/images/" }
                           route: { cluster: image-provider, prefix_rewrite: "/" }
-                        - match: { prefix: "/flagservice/" }
+                        - name: "/flagservice/*"
+                          match: { prefix: "/flagservice/" }
                           route: { cluster: flagservice, prefix_rewrite: "/", timeout: 0s }
-                        - match: { prefix: "/feature" }
+                        - name: "/feature*"
+                          match: { prefix: "/feature" }
                           route:
                             cluster: flagd-ui
                             prefix_rewrite: "/"
                             upgrade_configs:
                               - upgrade_type: websocket
-                        - match: { path: "/profiles" }
+                        - name: "/profiles"
+                          match: { path: "/profiles" }
                           redirect: { path_redirect: "/profiles/" }
-                        - match: { prefix: "/profiles/" }
+                        - name: "/profiles/*"
+                          match: { prefix: "/profiles/" }
                           route: { cluster: profiles }
-                        - match: { path: "/chatbot" }
+                        - name: "/chatbot"
+                          match: { path: "/chatbot" }
                           redirect: { path_redirect: "/chatbot/" }
-                        - match: { prefix: "/chatbot/" }
+                        - name: "/chatbot/*"
+                          match: { prefix: "/chatbot/" }
                           route:
                             cluster: chatbot
                             prefix_rewrite: "/"
                             timeout: 0s
                             upgrade_configs:
                               - upgrade_type: websocket
-                        - match: { prefix: "/" }  # Default/catch-all route - keep last since prefix:"/" matches everything
+                        - name: "/*"
+                          match: { prefix: "/" }  # Default/catch-all route - keep last since prefix:"/" matches everything
                           route: { cluster: frontend }
                 http_filters:
                   - name: envoy.filters.http.fault
@@ -113,27 +130,45 @@ static_resources:
                               string_value: ${OTEL_SERVICE_NAMESPACE}
                       attributes:
                         values:
+                          - key: "client.address"
+                            value:
+                              string_value: "%DOWNSTREAM_REMOTE_ADDRESS_WITHOUT_PORT%"
+                          - key: "client.port"
+                            value:
+                              string_value: "%DOWNSTREAM_REMOTE_PORT%"
                           - key: "destination.address"
                             value:
                               string_value: "%UPSTREAM_REMOTE_ADDRESS_WITHOUT_PORT%"
                           - key: "event.name"
                             value:
                               string_value: "proxy.access"
+                          - key: "http.request.method"
+                            value:
+                              string_value: "%REQ(:METHOD)%"
+                          - key: "http.request.body.size"
+                            value:
+                              string_value: "%BYTES_RECEIVED%"
+                          - key: "http.response.body.size"
+                            value:
+                              string_value: "%BYTES_SENT%"
+                          - key: "http.response.status_code"
+                            value:
+                              string_value: "%RESPONSE_CODE%"
+                          - key: "http.route"
+                            value:
+                              string_value: "%ROUTE_NAME%"
                           - key: "server.address"
                             value:
-                              string_value: "%DOWNSTREAM_LOCAL_ADDRESS%"
-                          - key: "source.address"
+                              string_value: "%DOWNSTREAM_LOCAL_ADDRESS_WITHOUT_PORT%"
+                          - key: "server.port"
                             value:
-                              string_value: "%DOWNSTREAM_REMOTE_ADDRESS_WITHOUT_PORT%"
+                              string_value: "%DOWNSTREAM_LOCAL_PORT%"
                           - key: "upstream.cluster"
                             value:
                               string_value: "%UPSTREAM_CLUSTER%"
                           - key: "upstream.host"
                             value:
                               string_value: "%UPSTREAM_HOST%"
-                          - key: "user_agent.original"
-                            value:
-                              string_value: "%REQ(USER-AGENT)%"
                           - key: "url.full"
                             value:
                               string_value: "%REQ(:SCHEME)%://%REQ(:AUTHORITY)%%REQ(:PATH)%"
@@ -143,9 +178,12 @@ static_resources:
                           - key: "url.query"
                             value:
                               string_value: "%REQ(:QUERY)%"
-                          - key: "url.template"
+                          - key: "url.scheme"
                             value:
-                              string_value: "%ROUTE_NAME%"
+                              string_value: "%REQ(:SCHEME)%"
+                          - key: "user_agent.original"
+                            value:
+                              string_value: "%REQ(USER-AGENT)%"
   clusters:
     - name: opentelemetry_collector_grpc
       type: STRICT_DNS
