@@ -28,6 +28,21 @@
 # container itself going down, not just an explicit unhealthy report. The
 # instance_status_check alarm in alerts.tf (EC2 StatusCheckFailed) still
 # exists as a coarser backstop for "the whole instance is dead."
+#
+# `max by ("@resource.service.name")` wraps the `== 0` branch because
+# service.name alone isn't the full resource identity: resourcedetection's
+# docker detector (base config) stamps every resource passing through with
+# the otel-collector container's own container.id, and that container gets
+# force-recreated on every `make update` deploy (see roles/otel_demo) --
+# getting a new id each time. So over the deployment's life, a service's
+# pushes can carry more than one distinct container.id, and the metric
+# store keeps each as its own time series even though the plain
+# @resource.service.name selector matches all of them. `max by` collapses
+# those down to one series before the `== 0` check, the standard Prometheus
+# idiom for a redundant/relabeled `up`-style gauge (only "down" if every
+# reporting series agrees). absent_over_time doesn't need the same
+# treatment -- it already collapses its match set to a single synthesized
+# series on its own.
 
 # Every container compose.yaml/compose.full.yaml starts under the "core"
 # profile (see terraform/variables.tf's compose_profile), by its
@@ -60,7 +75,7 @@ resource "aws_cloudwatch_metric_alarm" "service_down" {
       # 60s) tolerates one missed push without flapping, while still being
       # comfortably under the 5-minute pending_period below.
       query           = <<-EOT
-        {"deploy.service_up", "@resource.service.name"="${each.value}"} == 0
+        max by ("@resource.service.name") ({"deploy.service_up", "@resource.service.name"="${each.value}"}) == 0
         or
         absent_over_time({"deploy.service_up", "@resource.service.name"="${each.value}"}[3m])
       EOT
