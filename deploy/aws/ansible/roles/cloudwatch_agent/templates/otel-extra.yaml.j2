@@ -7,23 +7,17 @@
 # doc's own guidance, so it can't collide with pipelines the agent
 # auto-generates from amazon-cloudwatch-agent.json.
 #
-# Two sources feed the one CloudWatch OTLP metrics exporter here:
-#   - hostmetrics/cwagent: box infra (cpu/memory/disk/network/load) collected
-#     directly by this collector, running on the host (not in Docker, unlike
-#     the demo's own otel-collector container) so no IMDS hop-limit issue.
-#   - statsd/cwagent: per-service health/restart-count gauges pushed by
-#     roles/service_health's check script -- that script also feeds these
-#     same values to a classic CloudWatch alarm via PutMetricData (see
-#     terraform/monitoring.tf) for reliable alerting; this path additionally
-#     lands them in the OTel metric store so they show up in Query Studio
-#     alongside the rest of the demo's telemetry.
-#
-# The agent only ships with the component allowlist documented on that page
-# (otlp/prometheus/statsd/collectd/jmx/hostmetrics/... receivers;
-# otlphttp/awsemf/... exporters) -- there's no httpcheck or docker-stats
-# receiver available here, which is why the HTTP GET checks and Docker
-# restart counts themselves live in the service_health script instead of a
-# receiver config.
+# Just box infra here (cpu/memory/disk/network/load), collected directly by
+# this collector, which runs on the host itself (not in Docker, unlike the
+# demo's own otel-collector container) so there's no IMDS hop-limit issue.
+# Per-service health/restart-count metrics don't go through the CloudWatch
+# agent at all -- roles/service_health's check script pushes those straight
+# into the demo's own otel-collector container over OTLP instead (see that
+# role and terraform/monitoring.tf), so they ride the same
+# resourcedetection/export pipeline as every other service's telemetry. The
+# agent's own component allowlist has no httpcheck or docker-stats receiver
+# anyway, which is why those checks couldn't live here even if it seemed
+# convenient to consolidate.
 receivers:
   hostmetrics/cwagent:
     collection_interval: 60s
@@ -35,9 +29,6 @@ receivers:
       load: {}
       network: {}
       paging: {}
-  statsd/cwagent:
-    endpoint: 127.0.0.1:8125
-    aggregation_interval: 60s
 
 processors:
   batch/cwagent: {}
@@ -60,6 +51,6 @@ service:
   extensions: [sigv4auth/cwagent]
   pipelines:
     metrics/cwagent:
-      receivers: [hostmetrics/cwagent, statsd/cwagent]
+      receivers: [hostmetrics/cwagent]
       processors: [resourcedetection/cwagent, batch/cwagent]
       exporters: [otlphttp/cwagent]

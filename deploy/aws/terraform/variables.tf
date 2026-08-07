@@ -34,9 +34,14 @@ variable "allowed_cidr" {
 }
 
 variable "alert_email" {
-  description = "Email address to notify when the instance fails its status checks. Leave unset (the default) to skip creating the SNS topic/subscription/alarm entirely."
+  description = "Email address subscribed to the SNS topic that CloudWatch alarms notify: the instance status-check alarm (alerts.tf) and the per-service downtime alarms (monitoring.tf). The alarms themselves are always created and visible in the console either way; leave this unset (the default) to skip creating the SNS topic/subscription -- and thus the alarms' notification actions -- so cloning this deploy dir doesn't force anyone into SNS/email setup. AWS emails this address a subscription-confirmation link on the first apply; alerts won't arrive until it's clicked."
   type        = string
   default     = ""
+
+  validation {
+    condition     = var.alert_email == "" || can(regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$", var.alert_email))
+    error_message = "alert_email must be empty or look like a valid email address."
+  }
 }
 
 variable "compose_profile" {
@@ -47,15 +52,5 @@ variable "compose_profile" {
   validation {
     condition     = contains(["core", "full"], var.compose_profile)
     error_message = "compose_profile must be either \"core\" or \"full\"."
-  }
-}
-
-variable "alert_email" {
-  description = "Email address subscribed to the SNS topic that CloudWatch alarms notify when a service has been down for more than 15 minutes. AWS emails this address a subscription-confirmation link on the first apply; alerts won't arrive until it's clicked."
-  type        = string
-
-  validation {
-    condition     = can(regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$", var.alert_email))
-    error_message = "alert_email must look like a valid email address."
   }
 }

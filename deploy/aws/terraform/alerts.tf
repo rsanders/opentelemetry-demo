@@ -14,14 +14,26 @@ resource "aws_sns_topic_subscription" "alerts_email" {
   endpoint  = var.alert_email
 }
 
+# Shared by every alarm in this deployment (below, and monitoring.tf's
+# per-service ones): the alarms themselves are always created so they're
+# visible in the console regardless of alert_email, but their actions list
+# is empty -- not a reference to a topic that doesn't exist -- when there's
+# no SNS topic to notify.
+locals {
+  alert_actions = var.alert_email != "" ? [aws_sns_topic.alerts[0].arn] : []
+}
+
 # StatusCheckFailed covers both the system (AWS-side) and instance
 # (OS-side) status checks in one metric -- either one failing means the
 # demo is unreachable. Published every 60s without needing detailed
 # monitoring enabled. treat_missing_data = "breaching" because a healthy
 # instance always reports this metric; missing data points mean the
 # instance stopped reporting entirely, which is itself the failure.
+#
+# Always created, regardless of alert_email -- so it's visible (and
+# alarm-state-queryable) in the console even with no notification channel
+# configured. Only the SNS actions are conditional, via local.alert_actions.
 resource "aws_cloudwatch_metric_alarm" "instance_status_check" {
-  count             = var.alert_email != "" ? 1 : 0
   alarm_name        = "${var.project_name}-instance-status-check-failed"
   alarm_description = "${var.project_name} EC2 instance is failing its status checks -- the demo is likely unreachable."
   namespace         = "AWS/EC2"
@@ -35,6 +47,6 @@ resource "aws_cloudwatch_metric_alarm" "instance_status_check" {
   threshold           = 0
   comparison_operator = "GreaterThanThreshold"
   treat_missing_data  = "breaching"
-  alarm_actions       = [aws_sns_topic.alerts[0].arn]
-  ok_actions          = [aws_sns_topic.alerts[0].arn]
+  alarm_actions       = local.alert_actions
+  ok_actions          = local.alert_actions
 }

@@ -53,11 +53,12 @@ resource "aws_eip" "this" {
 resource "local_file" "ansible_inventory" {
   filename = "${path.module}/../ansible/inventory.ini"
   content = templatefile("${path.module}/templates/inventory.tpl.ini", {
-    public_ip       = aws_eip.this.public_ip
-    ssh_key_path    = "${var.project_name}-ssh.pem"
-    aws_region      = var.region
-    compose_profile = var.compose_profile
-    app_log_group   = aws_cloudwatch_log_group.app.name
+    public_ip         = aws_eip.this.public_ip
+    ssh_key_path      = "${var.project_name}-ssh.pem"
+    aws_region        = var.region
+    compose_profile   = var.compose_profile
+    app_log_group     = aws_cloudwatch_log_group.app.name
     otelcol_log_group = aws_cloudwatch_log_group.otelcol.name
+    project_name      = var.project_name
   })
 }

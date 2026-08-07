@@ -24,6 +24,6 @@ output "ansible_inventory_path" {
 }
 
 output "alerts_topic_arn" {
-  description = "SNS topic CloudWatch alarms notify on service downtime. Check the subscribed email for a confirmation link -- alerts don't arrive until it's clicked."
-  value       = aws_sns_topic.alerts.arn
+  description = "SNS topic CloudWatch alarms notify on instance/service downtime, if alert_email is set. Check the subscribed email for a confirmation link -- alerts don't arrive until it's clicked."
+  value       = try(aws_sns_topic.alerts[0].arn, null)
 }

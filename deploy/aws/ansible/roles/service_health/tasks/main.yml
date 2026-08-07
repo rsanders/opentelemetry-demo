@@ -9,19 +9,11 @@
 
 - name: Deploy the service health-check script
   ansible.builtin.copy:
-    src: check.sh
-    dest: /opt/otel-demo-monitoring/check.sh
+    src: check.py
+    dest: /opt/otel-demo-monitoring/check.py
     owner: root
     group: root
     mode: "0755"
-
-- name: Deploy the script's environment file
-  ansible.builtin.template:
-    src: otel-demo-monitoring.env.j2
-    dest: /etc/otel-demo-monitoring.env
-    owner: root
-    group: root
-    mode: "0644"
 
 - name: Deploy the systemd service + timer
   ansible.builtin.copy:

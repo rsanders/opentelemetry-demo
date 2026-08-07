@@ -97,10 +97,13 @@ cp terraform.tfvars.example terraform.tfvars
 Edit `terraform.tfvars` and set `allowed_cidr` to your own IP (find it with
 `curl -s https://checkip.amazonaws.com`), e.g. `"203.0.113.4/32"`. This is
 required — it scopes SSH (22) and the demo frontend (80 and 8080) to just
-you. Also set `alert_email` to the address that should receive downtime
-alerts (see [Monitoring and alerts](#monitoring-and-alerts) below) — AWS
-emails it a subscription-confirmation link on the first apply, and alerts
-won't arrive until that's clicked.
+you. Optionally also set `alert_email` to receive downtime alerts (see
+[Monitoring and alerts](#monitoring-and-alerts) below) — the alarms
+themselves are always created and visible in the console either way; left
+unset (the default), no SNS topic/subscription is created, so the alarms
+just have nothing wired up to notify. AWS emails the address a
+subscription-confirmation link on the first apply, and alerts won't arrive
+until that's clicked.
 
 ```bash
 cd deploy/aws
@@ -196,10 +199,10 @@ before the subnet/VPC can be deleted; this is automatic, not a hang.
 
 Two things watch the instance beyond the app's own telemetry, both installed
 by Ansible (`roles/cloudwatch_agent`, `roles/service_health`) and provisioned
-by Terraform (`terraform/monitoring.tf`):
+by Terraform (`terraform/monitoring.tf`, `alerts.tf`):
 
 - **Per-service health, restart counts, and downtime alerts.** A script
-  (`roles/service_health/files/check.sh`) runs every 60 seconds via a systemd
+  (`roles/service_health/files/check.py`) runs every 60 seconds via a systemd
   timer and checks every container compose.yaml/compose.full.yaml starts, by
   its fixed `container_name`. For most services that means reading Docker's
   own `HEALTHCHECK` status (falling back to `State.Running` for the few
@@ -207,15 +210,39 @@ by Terraform (`terraform/monitoring.tf`):
   genuinely HTTP (`frontend`, `frontend-proxy`, `image-provider`, `flagd-ui`,
   `telemetry-docs`, plus `flagd`'s management port) it additionally does a
   real `GET` against the container's own docker-network IP. Both the up/down
-  state and Docker's restart count are pushed to CloudWatch as
-  `ServiceUp`/`ServiceRestartCount` in the `<project_name>/services`
-  namespace. A `aws_cloudwatch_metric_alarm` per service (in
-  `terraform/monitoring.tf`) fires — and emails the `alert_email` address via
-  SNS — if a service has reported unhealthy, or stopped reporting at all,
-  for 15 straight minutes; it also notifies on recovery. Check your inbox
-  (including spam) for the SNS subscription-confirmation email after the
-  first `make up`/`make update` — alerts are silently dropped until it's
-  confirmed.
+  state and Docker's restart count are pushed as OTLP gauges
+  (`deploy.service_up`, `deploy.service_restart_count`) straight into the
+  otel-collector container's own OTLP receiver — the same one every app
+  service sends to — rather than calling a CloudWatch API directly, so they
+  ride the collector's existing metrics pipeline out to the same
+  `otlphttp`/`sigv4auth` export as everything else, and land in the same OTel
+  metric store with the same resource labeling (each service's
+  `OTEL_RESOURCE_ATTRIBUTES`, plus whatever `resourcedetection` adds). There's
+  no classic-namespace copy.
+
+  A PromQL alarm per service (in `terraform/monitoring.tf`, always created
+  and visible in the console regardless of `alert_email`) queries
+  `deploy.service_up` for that service and fires once it's been reported
+  `0`, *or* stopped being reported at all (`absent_over_time` over a
+  3-minute window, tolerating one missed push), continuously for 5 minutes;
+  it also recovers back to OK the same way. If `alert_email` is set, firing
+  and recovering both additionally email that address via SNS — otherwise
+  the alarms just have no action wired up, same as the EC2
+  instance-status-check alarm below. Folding "stopped reporting" into the query like that matters
+  because a PromQL alarm's query simply stops returning a series once
+  nothing is reporting it, which alone reads as *recovering*, not breaching
+  — unlike a classic alarm's `treat_missing_data = "breaching"`. With the
+  `absent_over_time` branch, that now also catches the check script or the
+  otel-collector container itself going down, not just an explicit unhealthy
+  report — `alerts.tf`'s instance-status-check alarm (EC2
+  `StatusCheckFailed`) remains a coarser backstop on top for "the whole
+  instance is dead." This needs `hashicorp/aws` >= 6.42 (see `versions.tf`),
+  the first provider version with PromQL-alarm support
+  (`evaluation_criteria`/`promql_criteria`) — classic
+  `aws_cloudwatch_metric_alarm` namespace/dimensions can't read the OTel
+  metric store at all. Check your inbox (including spam) for the SNS
+  subscription-confirmation email after the first `make up`/`make update`
+  with `alert_email` set — alerts are silently dropped until it's confirmed.
 - **Box infrastructure.** The [CloudWatch
   agent](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/install-CloudWatch-Agent-on-EC2-Instance.html)
   runs on the host directly (not in Docker) collecting CPU, memory, disk,
@@ -223,17 +250,14 @@ by Terraform (`terraform/monitoring.tf`):
   receiver, exported the same way the app's own telemetry is — `otlphttp` +
   `sigv4auth` straight to CloudWatch's OTLP metrics endpoint (see
   `roles/cloudwatch_agent/templates/otel-extra.yaml.j2`) — so it lands in the
-  same OTel metric store, queryable with PromQL in Query Studio. The agent
-  also runs a `statsd` receiver on its behalf, fed by the service-health
-  script above, so those per-service metrics show up there too, not just in
-  the classic namespace the alarms watch. The CloudWatch agent's supported
-  component set has no HTTP-check or Docker-stats receiver, so it can't do
-  the per-service GET checks or read restart counts itself — that's the
-  division of labor with the service-health script above.
+  same OTel metric store, queryable with PromQL in Query Studio. Per-service
+  metrics don't go through the CloudWatch agent at all (see above); its
+  supported component set has no HTTP-check or Docker-stats receiver anyway,
+  which is why those checks live in the service-health script instead.
 
-`ServiceRestartCount` is a plain metric, not wired to its own alarm — watch
-it on a dashboard, or add an `aws_cloudwatch_metric_alarm` for it the same
-way `service_down` is defined if you want paging on repeated restarts too.
+`deploy.service_restart_count` is pushed but not wired to its own alarm —
+query it in Query Studio, or add a second PromQL alarm for it the same way
+`service_down` is defined if you want paging on repeated restarts too.
 
 ## Operating it
 

@@ -1,9 +1,8 @@
 [Unit]
-Description=otel-demo per-service health/restart-count check -> CloudWatch
+Description=otel-demo per-service health/restart-count check -> otel-collector OTLP receiver
 After=docker.service
 Requires=docker.service
 
 [Service]
 Type=oneshot
-EnvironmentFile=/etc/otel-demo-monitoring.env
-ExecStart=/opt/otel-demo-monitoring/check.sh
+ExecStart=/usr/bin/python3 /opt/otel-demo-monitoring/check.py
