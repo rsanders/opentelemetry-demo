@@ -17,7 +17,10 @@ and forwards everything the `otel-collector` service sees into CloudWatch:
   logs pipeline by `service.name` first, giving each service its own log
   stream under `/otel-demo/logs` instead of one shared stream. A service not
   in that routing table (see `otelcol-config-extras-aws.yml.j2`) still gets
-  exported, just bucketed into a shared `other` stream.
+  exported, just bucketed into a shared `other` stream. The collector's own
+  self-telemetry logs go to a separate `/otel-demo/otelcol` group instead, so
+  they don't turn up in searches or trace/log correlations scoped to the app
+  services' group.
 - **Traces** → CloudWatch, via the `otlphttp` exporter pointed at CloudWatch's
   OpenTelemetry traces endpoint (`https://xray.<region>.amazonaws.com/v1/traces`),
   also `sigv4auth`-signed (SigV4 service name `xray` — same X-Ray ingestion API
@@ -176,6 +179,8 @@ before the subnet/VPC can be deleted; this is automatic, not a hang.
 
 - **Traces**: AWS Console → CloudWatch → Traces (or X-Ray → Traces)
 - **Logs**: AWS Console → CloudWatch → Log groups → `/otel-demo/logs`
+  (application logs via the collector) or `/otel-demo/otelcol` (the
+  collector's own self-telemetry)
 - **Metrics**: AWS Console → CloudWatch → **Query Studio**, then run a PromQL
   query. `{__name__!=""}` lists everything arriving; the demo's own metrics are
   defined in [`telemetry-schema/metrics/`](../../telemetry-schema/metrics/) and

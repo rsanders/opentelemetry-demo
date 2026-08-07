@@ -138,6 +138,15 @@ export class OtelDemoEcsStack extends Stack {
       removalPolicy: RemovalPolicy.DESTROY,
     });
 
+    // The collector's own self-telemetry (service.name "otelcol-contrib")
+    // lands here instead of appLogGroup, so it doesn't turn up in
+    // searches/correlations scoped to the app services' log group.
+    const otelcolLogGroup = new logs.LogGroup(this, 'OtelcolLogGroup', {
+      logGroupName: `/${prefix}/otelcol`,
+      retention,
+      removalPolicy: RemovalPolicy.DESTROY,
+    });
+
     const executionRole = new iam.Role(this, 'ExecutionRole', {
       roleName: `${prefix}-task-execution`,
       assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
@@ -155,6 +164,7 @@ export class OtelDemoEcsStack extends Stack {
       namespace: namespaceName,
       publicUrl,
       appLogGroupName: appLogGroup.logGroupName,
+      otelcolLogGroupName: otelcolLogGroup.logGroupName,
     });
 
     const services = new Map<string, ecs.FargateService>();
@@ -349,7 +359,7 @@ export class OtelDemoEcsStack extends Stack {
           'logs:PutLogEvents',
           'logs:DescribeLogStreams',
         ],
-        resources: [`${appLogGroup.logGroupArn}:*`],
+        resources: [`${appLogGroup.logGroupArn}:*`, `${otelcolLogGroup.logGroupArn}:*`],
       }),
     );
     collector.taskDefinition.addToTaskRolePolicy(

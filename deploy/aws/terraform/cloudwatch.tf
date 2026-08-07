@@ -1,6 +1,9 @@
 # Destination for the collector's per-service otlphttp/logs/* exporters.
 # Metrics need no log group of their own -- they go to the CloudWatch OTLP
-# metrics endpoint, not through EMF log lines.
+# metrics endpoint, not through EMF log lines. The collector's own
+# self-telemetry logs go to aws_cloudwatch_log_group.otelcol instead (below),
+# kept separate so they don't turn up in searches/correlations scoped to this
+# group's app logs.
 resource "aws_cloudwatch_log_group" "app" {
   name              = "/${var.project_name}/logs"
   retention_in_days = 14
@@ -28,7 +31,30 @@ locals {
 }
 
 resource "aws_cloudwatch_log_stream" "app" {
-  for_each       = toset(concat(local.log_stream_services, ["otel-collector", "other"]))
+  for_each       = toset(concat(local.log_stream_services, ["other"]))
   name           = each.value
   log_group_name = aws_cloudwatch_log_group.app.name
+}
+
+# The collector's own self-telemetry (service.name "otelcol-contrib", see the
+# otlphttp/logs/otel-collector exporter in otelcol-config-extras-aws.yml.j2),
+# in its own log group rather than a stream under aws_cloudwatch_log_group.app
+# -- otherwise CloudWatch Logs Insights queries/correlations scoped to that
+# group (e.g. via aws.log.group.names on traces) would also pull in the
+# collector's internal debug-level logging.
+resource "aws_cloudwatch_log_group" "otelcol" {
+  name              = "/${var.project_name}/otelcol"
+  retention_in_days = 14
+  # Overrides the provider's default_tags (main.tf), so this group -- and
+  # only this group -- shows up under its own Application in Resource
+  # Groups/myApplications rather than the shared "${var.project_name}"
+  # Application every other resource on the instance falls under.
+  tags = {
+    awsApplication = "${var.project_name}-monitoring"
+  }
+}
+
+resource "aws_cloudwatch_log_stream" "otelcol" {
+  name           = "otel-collector"
+  log_group_name = aws_cloudwatch_log_group.otelcol.name
 }

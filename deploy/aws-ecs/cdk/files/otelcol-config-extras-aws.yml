@@ -287,12 +287,14 @@ exporters:
       authenticator: sigv4auth/logs
   # The collector's own self-telemetry (looped back through its otlp
   # receiver, see service.telemetry below) carries service.name
-  # "otelcol-contrib", not one of the app services above.
+  # "otelcol-contrib", not one of the app services above. Its own log group
+  # (not APP_LOG_GROUP) so it doesn't turn up in searches/correlations scoped
+  # to the app services' log group.
   otlphttp/logs/otel-collector:
     logs_endpoint: https://logs.${env:AWS_REGION}.amazonaws.com/v1/logs
     compression: gzip
     headers:
-      x-aws-log-group: '${env:APP_LOG_GROUP}'
+      x-aws-log-group: '${env:OTELCOL_LOG_GROUP}'
       x-aws-log-stream: 'otel-collector'
     auth:
       authenticator: sigv4auth/logs

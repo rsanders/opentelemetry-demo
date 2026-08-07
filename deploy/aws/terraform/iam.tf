@@ -30,6 +30,7 @@ data "aws_iam_policy_document" "otel_export" {
     ]
     resources = [
       "${aws_cloudwatch_log_group.app.arn}:*",
+      "${aws_cloudwatch_log_group.otelcol.arn}:*",
     ]
   }
 

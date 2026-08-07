@@ -18,7 +18,10 @@ sees into CloudWatch:
   logs pipeline by `service.name` first, giving each service its own log
   stream under `/otel-demo-ecs/logs` instead of one shared stream. A service
   not in that routing table (see `cdk/files/otelcol-config-extras-aws.yml`)
-  still gets exported, just bucketed into a shared `other` stream.
+  still gets exported, just bucketed into a shared `other` stream. The
+  collector's own self-telemetry logs go to a separate `/otel-demo-ecs/otelcol`
+  group instead, so they don't turn up in searches or trace/log correlations
+  scoped to the app services' group.
 - **Traces** → CloudWatch, via the `otlphttp` exporter pointed at CloudWatch's
   OpenTelemetry traces endpoint (`https://xray.<region>.amazonaws.com/v1/traces`),
   also `sigv4auth`-signed (SigV4 service name `xray` — same X-Ray ingestion API
@@ -175,7 +178,8 @@ deliberately left alone — it is shared by every CDK app in the account.
 
 - **Traces**: AWS Console → CloudWatch → Traces (or X-Ray → Traces)
 - **Logs**: AWS Console → CloudWatch → Log groups → `/otel-demo-ecs/logs`
-  (application logs via the collector)
+  (application logs via the collector) or `/otel-demo-ecs/otelcol` (the
+  collector's own self-telemetry)
 - **Metrics**: AWS Console → CloudWatch → **Query Studio**, then run a PromQL
   query. `{__name__!=""}` lists everything arriving; the demo's own metrics are
   defined in [`telemetry-schema/metrics/`](../../telemetry-schema/metrics/) and
