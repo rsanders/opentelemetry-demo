@@ -1,0 +1,47 @@
+---
+- name: Ensure the monitoring script directory exists
+  ansible.builtin.file:
+    path: /opt/otel-demo-monitoring
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Deploy the service health-check script
+  ansible.builtin.copy:
+    src: check.sh
+    dest: /opt/otel-demo-monitoring/check.sh
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Deploy the script's environment file
+  ansible.builtin.template:
+    src: otel-demo-monitoring.env.j2
+    dest: /etc/otel-demo-monitoring.env
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Deploy the systemd service + timer
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/etc/systemd/system/{{ item }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop:
+    - otel-demo-health.service
+    - otel-demo-health.timer
+  register: health_units
+
+- name: Reload systemd if the units changed
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when: health_units.changed
+
+- name: Enable and start the health-check timer
+  ansible.builtin.systemd:
+    name: otel-demo-health.timer
+    enabled: true
+    state: started

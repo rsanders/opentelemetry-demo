@@ -1,0 +1,44 @@
+---
+- name: Install the CloudWatch agent (Amazon Linux 2023 repo)
+  ansible.builtin.dnf:
+    name: amazon-cloudwatch-agent
+    state: present
+
+- name: Deploy the CloudWatch agent's base JSON config
+  ansible.builtin.template:
+    src: amazon-cloudwatch-agent.json.j2
+    dest: /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Deploy the appended OTel config (host infra + service metrics -> CloudWatch OTLP)
+  ansible.builtin.template:
+    src: otel-extra.yaml.j2
+    dest: /opt/aws/amazon-cloudwatch-agent/etc/otel-extra.yaml
+    owner: root
+    group: root
+    mode: "0644"
+
+# Two-step by design (per AWS's own docs): fetch-config loads the JSON and
+# starts the agent, append-config layers the OTel YAML on top and restarts
+# it with the merged result. Re-run on every deploy, same as the
+# otel-collector's --force-recreate in roles/otel_demo, so an edited config
+# always actually takes effect rather than leaving an already-running agent
+# on a stale one.
+- name: Apply the base agent config
+  ansible.builtin.command: >
+    /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl
+    -a fetch-config -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json -s
+  changed_when: true
+
+- name: Layer the OTel config on top
+  ansible.builtin.command: >
+    /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl
+    -a append-config -c file:/opt/aws/amazon-cloudwatch-agent/etc/otel-extra.yaml -s
+  changed_when: true
+
+- name: Enable the CloudWatch agent at boot
+  ansible.builtin.systemd:
+    name: amazon-cloudwatch-agent
+    enabled: true

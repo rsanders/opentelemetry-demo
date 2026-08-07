@@ -22,3 +22,8 @@ output "ansible_inventory_path" {
   description = "Path to the Ansible inventory generated for this instance."
   value       = local_file.ansible_inventory.filename
 }
+
+output "alerts_topic_arn" {
+  description = "SNS topic CloudWatch alarms notify on service downtime. Check the subscribed email for a confirmation link -- alerts don't arrive until it's clicked."
+  value       = aws_sns_topic.alerts.arn
+}

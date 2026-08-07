@@ -27,3 +27,5 @@
     - ssm
     - docker
     - otel_demo
+    - cloudwatch_agent
+    - service_health

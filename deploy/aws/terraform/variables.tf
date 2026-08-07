@@ -49,3 +49,13 @@ variable "compose_profile" {
     error_message = "compose_profile must be either \"core\" or \"full\"."
   }
 }
+
+variable "alert_email" {
+  description = "Email address subscribed to the SNS topic that CloudWatch alarms notify when a service has been down for more than 15 minutes. AWS emails this address a subscription-confirmation link on the first apply; alerts won't arrive until it's clicked."
+  type        = string
+
+  validation {
+    condition     = can(regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$", var.alert_email))
+    error_message = "alert_email must look like a valid email address."
+  }
+}

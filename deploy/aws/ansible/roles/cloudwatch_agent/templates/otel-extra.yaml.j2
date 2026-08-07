@@ -1,0 +1,65 @@
+# Rendered by Ansible (roles/cloudwatch_agent) and appended on top of
+# amazon-cloudwatch-agent.json via `amazon-cloudwatch-agent-ctl -a
+# append-config` (the agent is itself built on the OpenTelemetry Collector,
+# and accepts a second, OTel-native YAML config layered on its JSON one --
+# https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-OTLPCloudWatchAgent.html).
+# Every component/pipeline name below carries a /cwagent suffix per that
+# doc's own guidance, so it can't collide with pipelines the agent
+# auto-generates from amazon-cloudwatch-agent.json.
+#
+# Two sources feed the one CloudWatch OTLP metrics exporter here:
+#   - hostmetrics/cwagent: box infra (cpu/memory/disk/network/load) collected
+#     directly by this collector, running on the host (not in Docker, unlike
+#     the demo's own otel-collector container) so no IMDS hop-limit issue.
+#   - statsd/cwagent: per-service health/restart-count gauges pushed by
+#     roles/service_health's check script -- that script also feeds these
+#     same values to a classic CloudWatch alarm via PutMetricData (see
+#     terraform/monitoring.tf) for reliable alerting; this path additionally
+#     lands them in the OTel metric store so they show up in Query Studio
+#     alongside the rest of the demo's telemetry.
+#
+# The agent only ships with the component allowlist documented on that page
+# (otlp/prometheus/statsd/collectd/jmx/hostmetrics/... receivers;
+# otlphttp/awsemf/... exporters) -- there's no httpcheck or docker-stats
+# receiver available here, which is why the HTTP GET checks and Docker
+# restart counts themselves live in the service_health script instead of a
+# receiver config.
+receivers:
+  hostmetrics/cwagent:
+    collection_interval: 60s
+    scrapers:
+      cpu: {}
+      memory: {}
+      disk: {}
+      filesystem: {}
+      load: {}
+      network: {}
+      paging: {}
+  statsd/cwagent:
+    endpoint: 127.0.0.1:8125
+    aggregation_interval: 60s
+
+processors:
+  batch/cwagent: {}
+  resourcedetection/cwagent:
+    detectors: [env, system, ec2]
+
+exporters:
+  otlphttp/cwagent:
+    metrics_endpoint: https://monitoring.{{ aws_region }}.amazonaws.com/v1/metrics
+    compression: gzip
+    auth:
+      authenticator: sigv4auth/cwagent
+
+extensions:
+  sigv4auth/cwagent:
+    region: {{ aws_region }}
+    service: monitoring
+
+service:
+  extensions: [sigv4auth/cwagent]
+  pipelines:
+    metrics/cwagent:
+      receivers: [hostmetrics/cwagent, statsd/cwagent]
+      processors: [resourcedetection/cwagent, batch/cwagent]
+      exporters: [otlphttp/cwagent]

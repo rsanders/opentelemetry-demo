@@ -1,0 +1,9 @@
+[Unit]
+Description=otel-demo per-service health/restart-count check -> CloudWatch
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/otel-demo-monitoring.env
+ExecStart=/opt/otel-demo-monitoring/check.sh
