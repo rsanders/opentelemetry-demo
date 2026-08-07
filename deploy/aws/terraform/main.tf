@@ -5,6 +5,11 @@ provider "aws" {
     tags = {
       Project   = var.project_name
       ManagedBy = "terraform"
+      # AWS Resource Groups reads this key for tag-based grouping (the same
+      # key AppRegistry/myApplications used to vend before it stopped taking
+      # new customers on 2026-07-30) -- a plain static value works just as
+      # well since nothing here depends on AppRegistry's ARN-based value.
+      awsApplication = var.project_name
     }
   }
 }
