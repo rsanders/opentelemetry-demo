@@ -33,6 +33,12 @@ variable "allowed_cidr" {
   }
 }
 
+variable "alert_email" {
+  description = "Email address to notify when the instance fails its status checks. Leave unset (the default) to skip creating the SNS topic/subscription/alarm entirely."
+  type        = string
+  default     = ""
+}
+
 variable "compose_profile" {
   description = "Which compose layer to run: \"core\" (compose.yaml only) or \"full\" (adds compose.full.yaml for Kafka/accounting/fraud-detection)."
   type        = string
