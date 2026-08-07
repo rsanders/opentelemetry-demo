@@ -25,15 +25,11 @@ and forwards everything the `otel-collector` service sees into CloudWatch:
   console under Traces / ServiceLens. Requires [Transaction
   Search](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Transaction-Search.html)
   enabled on the account — an account-wide, one-time setting, not scoped to
-  this deployment's own resources. `make up`/`make update` bootstraps it
-  (`transaction-search.tf`): a CloudWatch Logs resource policy letting X-Ray
-  write into the `aws/spans`/`/aws/application-signals/data` log groups, plus
-  `awscc_xray_transaction_search_config` (the `hashicorp/awscc`
-  CloudFormation-backed provider — `hashicorp/aws` has no resource for this
-  until provider v6.46, a breaking major version this repo isn't otherwise
-  moving to). If it's somehow not applied, the collector logs `Message=The
-  OTLP API is supported with CloudWatch Logs as a Trace Segment Destination`
-  (per AWS's troubleshooting docs) and traces are dropped.
+  this deployment's own resources. This Terraform does not bootstrap it, so
+  it must already be enabled some other way (another stack, the console, or
+  a teammate) before traces will show up. If it isn't, the collector logs
+  `Message=The OTLP API is supported with CloudWatch Logs as a Trace Segment
+  Destination` (per AWS's troubleshooting docs) and traces are dropped.
 
 This is intentionally a single-instance, no-HA setup: it's meant for demoing
 the telemetry pipeline, not for production traffic.

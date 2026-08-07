@@ -17,15 +17,6 @@
 #    "otel-collector" stream, a leftover from the retired awscloudwatchlogs
 #    exporter (which auto-created it); could plausibly recur for any stream
 #    name after a partial apply, same root cause as #1.
-#
-# 3. awscc_xray_transaction_search_config (transaction-search.tf) can fail to
-#    *create* with Cloud Control API ErrorCode AlreadyExists, because
-#    Transaction Search is an account/region-wide singleton -- if it was
-#    already enabled by anything else (another stack, the console, a
-#    different tool) before this ran, Create rejects it outright rather than
-#    converging like the underlying xray:UpdateTraceSegmentDestination API
-#    would. Importing it (by account ID, the only identifier this resource
-#    takes) adopts the existing config instead.
 set -u
 cd "$(dirname "$0")"
 
@@ -75,20 +66,6 @@ for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
         fi
       fi
     done
-  elif echo "$OUTPUT" | grep -q "awscc_xray_transaction_search_config" && echo "$OUTPUT" | grep -q "AlreadyExists"; then
-    echo ">>> apply failed creating awscc_xray_transaction_search_config with AlreadyExists (attempt $attempt/$MAX_ATTEMPTS) -- Transaction Search is already enabled on this account by something else; importing the existing config, then retrying..." >&2
-
-    ADDR=$(echo "$OUTPUT" | grep -oE "with awscc_xray_transaction_search_config\.[a-zA-Z0-9_]+" | head -1)
-    if [ -n "$ADDR" ]; then
-      addr=$(echo "$ADDR" | grep -oE "awscc_xray_transaction_search_config\.[a-zA-Z0-9_]+")
-      if terraform state list | grep -qx "$addr"; then
-        echo "    $addr already in state, skipping import"
-      else
-        account_id=$(aws sts get-caller-identity --query Account --output text)
-        echo "    importing $addr <- account $account_id"
-        terraform import "$addr" "$account_id" || true
-      fi
-    fi
   else
     echo ">>> terraform apply failed for a reason other than the known already-exists quirks; not retrying." >&2
     exit "$STATUS"
