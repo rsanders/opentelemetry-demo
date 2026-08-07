@@ -29,6 +29,11 @@ resource "aws_instance" "this" {
 
   metadata_options {
     http_tokens = "required" # IMDSv2 only
+    # AWS's own guidance for containerized workloads: the app and collector
+    # run in Docker, which is an extra network hop to the IMDS endpoint that
+    # the default hop limit of 1 blocks.
+    # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configuring-IMDS-new-instances.html
+    http_put_response_hop_limit = 2
   }
 
   tags = {

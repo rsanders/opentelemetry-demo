@@ -41,6 +41,25 @@ extensions:
     region: {{ aws_region }}
 
 processors:
+  # Adds the `ec2` detector on top of the base config's [env, docker, system]
+  # so traces/logs/metrics carry cloud.provider, cloud.platform, cloud.region,
+  # cloud.availability_zone, cloud.account.id, host.id (instance ID), and
+  # host.image.id/host.type -- none of which the other three detectors set --
+  # letting the CloudWatch console correlate telemetry back to the EC2
+  # instance/AZ/account it came from. Appended last (after `system`) rather
+  # than inserted earlier so it doesn't touch the existing host.name value:
+  # the resourcedetection processor lets the first detector to set a given
+  # key win, and `system` above is deliberately configured (hostname_sources:
+  # ["os"]) to be the source of truth for host.name.
+  # https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/v0.157.0/processor/resourcedetectionprocessor/internal/aws/ec2/documentation.md
+  #
+  # Requires http_put_response_hop_limit = 2 on the instance's IMDS metadata
+  # options (see ec2.tf) -- the collector calls the EC2 detector from inside
+  # its Docker container, which is an extra network hop past the default
+  # hop limit of 1, so without it this detector times out.
+  # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configuring-IMDS-new-instances.html
+  resourcedetection:
+    detectors: [env, docker, system, ec2]
   # Tells CloudWatch which log group holds a service's logs, so the "Logs"
   # panel on a trace/metric detail page (X-Ray, Application Signals,
   # Transaction Search) knows where to search -- without it, the console has

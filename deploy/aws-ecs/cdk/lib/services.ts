@@ -106,8 +106,16 @@ export function buildCatalog(ctx: CatalogContext): ServiceSpec[] {
 
   const version = requireEnv(env, 'IMAGE_VERSION');
   const namespaceAttr = requireEnv(env, 'OTEL_SERVICE_NAMESPACE');
+  const environmentName = requireEnv(env, 'DEPLOYMENT_ENVIRONMENT_NAME');
+  const applicationName = requireEnv(env, 'APPLICATION_NAME');
+  // aws.application_signals.metric_resource_keys promotes the Application
+  // attribute into a metric dimension for Application Signals' Custom
+  // Metrics feature -- inert here today, since that feature is wired up for
+  // the awsemf exporter and this stack's metrics pipeline uses the native
+  // CloudWatch OTLP endpoint instead (otelcol-config-extras-aws.yml).
+  // https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/AppSignals-CustomMetrics.html
   const resourceAttrs = (criticality: string) =>
-    `service.namespace=${namespaceAttr},service.version=${version},service.criticality=${criticality}`;
+    `service.namespace=${namespaceAttr},service.version=${version},service.criticality=${criticality},deployment.environment.name=${environmentName},Application=${applicationName},aws.application_signals.metric_resource_keys=Application`;
 
   const temporality = requireEnv(env, 'OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE');
 
