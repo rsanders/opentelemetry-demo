@@ -21,7 +21,7 @@ COMPOSE := docker compose $(COMPOSE_FILES_$(or $(COMPOSE_PROFILE),core)) -f comp
 # $(1) extra ssh flags, $(2) the command to run in the repo directory.
 remote = cd $(TF_DIR) && bash -c "$$(terraform output -raw ssh_command) $(1) 'cd $(REPO_DEST) && $(2)'"
 
-.PHONY: fmt validate plan up update down outputs status logs shell otelcol-config ssh ssm
+.PHONY: fmt validate plan up update down outputs status restart logs shell otelcol-config ssh ssm
 
 fmt: ## Format the Terraform files
 	cd $(TF_DIR) && terraform fmt -recursive
@@ -55,6 +55,9 @@ outputs: ## Print the app URL, ssh command, etc.
 
 status: ## Show the state of every container on the instance
 	@$(call remote,,$(COMPOSE) ps)
+
+restart: ## Restart every container on the instance without re-provisioning
+	@$(call remote,,$(COMPOSE) restart)
 
 logs: ## Tail one service's container logs (SERVICE=cart)
 	@$(call remote,-t,$(COMPOSE) logs --follow --tail=100 $(SERVICE))
