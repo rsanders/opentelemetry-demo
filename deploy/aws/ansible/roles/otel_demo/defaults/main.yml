@@ -1,0 +1,13 @@
+---
+fast_update: false
+
+# Services that bind-mount config files by host path (see compose.yaml):
+# Compose only compares a container's *definition* (image, env, mount source
+# paths, command), never bind-mounted file *content*, so a fast_update's
+# plain `up -d` won't notice these changed on disk and must be told to
+# force-recreate them explicitly.
+bind_mount_services:
+  - otel-collector
+  - flagd
+  - flagd-ui
+  - product-catalog

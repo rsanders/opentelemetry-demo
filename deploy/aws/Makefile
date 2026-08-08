@@ -21,7 +21,7 @@ COMPOSE := docker compose $(COMPOSE_FILES_$(or $(COMPOSE_PROFILE),core)) -f comp
 # $(1) extra ssh flags, $(2) the command to run in the repo directory.
 remote = cd $(TF_DIR) && bash -c "$$(terraform output -raw ssh_command) $(1) 'cd $(REPO_DEST) && $(2)'"
 
-.PHONY: fmt validate plan up update down outputs status restart logs shell otelcol-config ssh ssm
+.PHONY: fmt validate plan up update update-fast down outputs status restart logs shell otelcol-config ssh ssm
 
 fmt: ## Format the Terraform files
 	cd $(TF_DIR) && terraform fmt -recursive
@@ -46,6 +46,15 @@ up: ## Create (or update) the AWS infra, then provision + start the demo stack
 update: ## Re-apply infra changes and re-sync/restart the demo stack (the "modify" path)
 	cd $(TF_DIR) && ./apply-with-retry.sh
 	cd $(ANSIBLE_DIR) && ansible-playbook -i inventory.ini site.yml
+
+# Unlike `update`, this only recreates containers whose image/env/command
+# actually changed, plus the handful (otel-collector, flagd, flagd-ui,
+# product-catalog) that bind-mount config files Compose can't diff by
+# content -- see roles/otel_demo/defaults/main.yml. Cheaper, but if you've
+# changed a bind-mounted file on a service not in that list, use `update`.
+update-fast: ## Like `update`, but skips recreating containers that didn't actually change
+	cd $(TF_DIR) && ./apply-with-retry.sh
+	cd $(ANSIBLE_DIR) && ansible-playbook -i inventory.ini site.yml -e fast_update=true
 
 down: ## Tear down all AWS resources created by this stack
 	cd $(TF_DIR) && terraform destroy

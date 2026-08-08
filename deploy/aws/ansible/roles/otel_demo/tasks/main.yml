@@ -46,14 +46,30 @@
     HOME: /home/ec2-user
 
 - name: Start the demo stack
-  # --force-recreate: several services (e.g. otel-collector) bind-mount config
-  # files by host path, and that path never changes between deploys even when
-  # the file's contents do -- only the container's *definition* (image, env,
-  # mount source paths, command) is compared, so `up -d` alone would leave an
-  # already-running container on its stale, already-loaded config.
-  ansible.builtin.shell: "docker compose {{ compose_file_flags[compose_profile] }} -f compose.aws-override.yml up -d --remove-orphans --force-recreate"
+  # --force-recreate (default path): several services (e.g. otel-collector)
+  # bind-mount config files by host path, and that path never changes between
+  # deploys even when the file's contents do -- only the container's
+  # *definition* (image, env, mount source paths, command) is compared, so
+  # `up -d` alone would leave an already-running container on its stale,
+  # already-loaded config. fast_update skips this blanket recreate and relies
+  # on Compose's own definition diff instead, at the cost of needing the
+  # bind_mount_services task below to catch what that diff can't see.
+  ansible.builtin.shell: >-
+    docker compose {{ compose_file_flags[compose_profile] }} -f compose.aws-override.yml
+    up -d --remove-orphans{{ '' if fast_update else ' --force-recreate' }}
   args:
     chdir: "{{ repo_dest }}"
   become_user: ec2-user
   environment:
     HOME: /home/ec2-user
+
+- name: Force-recreate services whose bind-mounted config content Compose can't diff
+  ansible.builtin.shell: >-
+    docker compose {{ compose_file_flags[compose_profile] }} -f compose.aws-override.yml
+    up -d --force-recreate {{ bind_mount_services | join(' ') }}
+  args:
+    chdir: "{{ repo_dest }}"
+  become_user: ec2-user
+  environment:
+    HOME: /home/ec2-user
+  when: fast_update
