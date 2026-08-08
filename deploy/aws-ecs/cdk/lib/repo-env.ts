@@ -1,6 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
+import { execFileSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -60,4 +61,35 @@ export function requireEnv(env: Record<string, string>, key: string): string {
   const value = env[key];
   if (!value) throw new Error(`Expected ${key} to be set in the repo's .env file.`);
   return value;
+}
+
+export interface GitInfo {
+  repo: string;
+  branch: string;
+  commit: string;
+  commitTimestamp: string;
+}
+
+function tryGit(args: string[]): string | undefined {
+  try {
+    return execFileSync('git', args, { cwd: REPO_ROOT, encoding: 'utf8' }).trim() || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Repo remote, branch, commit, and commit timestamp of the checkout this CDK
+ * app runs from, for tagging deployed resources with their provenance.
+ * Mirrors the sibling deploy/aws Terraform stack's git.tf/scripts/git-info.sh.
+ * Falls back to "unknown" per field rather than failing synth (e.g. no
+ * `origin` remote, detached HEAD, or running outside a git checkout).
+ */
+export function gitInfo(): GitInfo {
+  return {
+    repo: tryGit(['config', '--get', 'remote.origin.url']) ?? 'unknown',
+    branch: tryGit(['rev-parse', '--abbrev-ref', 'HEAD']) ?? 'unknown',
+    commit: tryGit(['rev-parse', 'HEAD']) ?? 'unknown',
+    commitTimestamp: tryGit(['show', '-s', '--format=%cI', 'HEAD']) ?? 'unknown',
+  };
 }

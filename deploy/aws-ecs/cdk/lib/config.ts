@@ -7,6 +7,8 @@ import * as path from 'path';
 export interface DemoConfig {
   /** CIDR allowed to reach the load balancer on 80/8080. */
   allowedCidr: string;
+  /** Who owns/deployed this stack -- your name or email. Tagged onto every resource. */
+  owner: string;
   region: string;
   /** Prefix for resource names, log groups, and the Cloud Map namespace. */
   projectName: string;
@@ -21,6 +23,7 @@ export interface DemoConfig {
 
 const DEFAULTS: DemoConfig = {
   allowedCidr: '162.200.0.0/16',
+  owner: '',
   region: 'us-east-1',
   projectName: 'otel-demo-ecs',
   imageName: 'ghcr.io/open-telemetry/demo',
@@ -54,6 +57,9 @@ export function loadConfig(cdkDir: string): DemoConfig {
       `allowedCidr must be a valid IPv4 CIDR block, e.g. 203.0.113.4/32 (got "${config.allowedCidr}"). ` +
         `Set it in ${file}.`,
     );
+  }
+  if (!config.owner) {
+    throw new Error(`owner must be set to your name or email, tagged onto every resource. Set it in ${file}.`);
   }
   if (config.cpuArchitecture !== 'X86_64' && config.cpuArchitecture !== 'ARM64') {
     throw new Error(

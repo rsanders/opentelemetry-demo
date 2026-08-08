@@ -4,6 +4,16 @@ variable "region" {
   default     = "us-east-1"
 }
 
+variable "owner" {
+  description = "Who owns/deployed this instance -- your name or email. Tagged onto every resource. No default on purpose -- set it in terraform.tfvars."
+  type        = string
+
+  validation {
+    condition     = var.owner != ""
+    error_message = "owner must be set, e.g. your name or email address."
+  }
+}
+
 variable "project_name" {
   description = "Short name used to tag/name all resources (also used as the CloudWatch namespace prefix)."
   type        = string

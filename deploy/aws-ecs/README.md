@@ -124,7 +124,11 @@ cp config.example.json config.json
 
 Edit `config.json` and set `allowedCidr` to your own IP (find it with `curl -s
 https://checkip.amazonaws.com`), e.g. `"203.0.113.4/32"`. This scopes the demo
-frontend (80 and 8080) to just you.
+frontend (80 and 8080) to just you. Also set `owner` to your name or email —
+both are required. `owner` gets tagged onto every resource, along with
+`Project`, `Name`, `awsApplication`, `ManagedBy`, and the deploying commit's
+`GitRepo`/`GitBranch`/`GitCommit`/`LastModified` (see the stack `tags` in
+`cdk/bin/otel-demo-ecs.ts`).
 
 ```bash
 cd deploy/aws-ecs

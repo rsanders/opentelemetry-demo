@@ -97,7 +97,11 @@ cp terraform.tfvars.example terraform.tfvars
 Edit `terraform.tfvars` and set `allowed_cidr` to your own IP (find it with
 `curl -s https://checkip.amazonaws.com`), e.g. `"203.0.113.4/32"`. This is
 required — it scopes SSH (22) and the demo frontend (80 and 8080) to just
-you. Optionally also set `alert_email` to receive downtime alerts (see
+you. Also set `owner` to your name or email — it's required and gets tagged
+onto every resource, along with `Project`, `Name`, `awsApplication`,
+`ManagedBy`, and the deploying commit's `GitRepo`/`GitBranch`/`GitCommit`/
+`LastModified` (see the `default_tags` block in `terraform/main.tf`).
+Optionally also set `alert_email` to receive downtime alerts (see
 [Monitoring and alerts](#monitoring-and-alerts) below) — the alarms
 themselves are always created and visible in the console either way; left
 unset (the default), no SNS topic/subscription is created, so the alarms
