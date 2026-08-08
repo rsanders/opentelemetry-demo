@@ -3,11 +3,16 @@
 
 import { NextApiHandler } from 'next';
 import {context, Exception, Span, SpanStatusCode, trace} from '@opentelemetry/api';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { ATTR_HTTP_ROUTE, SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
-const InstrumentationMiddleware = (handler: NextApiHandler): NextApiHandler => {
+// route must be the API's path pattern (e.g. "/api/products/{productId}"), not the raw
+// request URL, so http.route stays low-cardinality across dynamic path segments. Set before
+// the handler runs so it lands on both the span and the http.server.request.duration metric,
+// which is only annotated with http.route if the span already carries it by response finish.
+const InstrumentationMiddleware = (route: string, handler: NextApiHandler): NextApiHandler => {
   return async (request, response) => {
     const span = trace.getSpan(context.active()) as Span;
+    span.setAttribute(ATTR_HTTP_ROUTE, route);
 
     let httpStatus = 200;
     try {

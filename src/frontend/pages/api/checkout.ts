@@ -41,4 +41,4 @@ const handler = async ({ method, body, query }: NextApiRequest, res: NextApiResp
   }
 };
 
-export default InstrumentationMiddleware(handler);
+export default InstrumentationMiddleware('/api/checkout', handler);

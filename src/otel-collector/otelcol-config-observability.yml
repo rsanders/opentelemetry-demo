@@ -69,6 +69,6 @@ service:
     metrics:
       exporters: [debug, otlp_http/prometheus]
     logs:
-      exporters: [debug, opensearch]
+      exporters: [debug, opensearch, count/frontend_proxy_http]
     profiles:
       exporters: [debug, otlp_grpc/firepit]

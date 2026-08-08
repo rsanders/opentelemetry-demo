@@ -14,7 +14,7 @@
 # Upstream exporter names (repeat these to keep them active):
 #   traces:  otlp_grpc/jaeger, debug, span_metrics
 #   metrics: otlp_http/prometheus, debug
-#   logs:    opensearch, debug
+#   logs:    opensearch, debug, count/frontend_proxy_http
 #
 # Example:
 #
@@ -27,7 +27,7 @@
 #     traces:
 #       exporters: [otlp_grpc/jaeger, debug, span_metrics, otlp_grpc/mybackend]  # repeat upstream exporters
 #     metrics:
-#       receivers: [docker_stats, http_check/frontend-proxy, host_metrics, nginx, otlp, redis, span_metrics]
+#       receivers: [docker_stats, http_check/frontend-proxy, host_metrics, nginx, otlp, redis, prometheus/ad, prometheus/envoy, prometheus/flagd, span_metrics, count/frontend_proxy_http]
 #       exporters: [otlp_http/prometheus, debug, otlp_grpc/mybackend]           # repeat upstream exporters
 #     logs:
-#       exporters: [opensearch, debug, otlp_grpc/mybackend]                     # repeat upstream exporters
+#       exporters: [opensearch, debug, count/frontend_proxy_http, otlp_grpc/mybackend]  # repeat upstream exporters

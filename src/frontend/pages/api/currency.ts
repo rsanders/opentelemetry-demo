@@ -22,4 +22,4 @@ const handler = async ({ method }: NextApiRequest, res: NextApiResponse<TRespons
   }
 };
 
-export default InstrumentationMiddleware(handler);
+export default InstrumentationMiddleware('/api/currency', handler);

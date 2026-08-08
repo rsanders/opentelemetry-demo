@@ -212,7 +212,7 @@ service:
       processors: [resourcedetection, memory_limiter, resource/aws_log_correlation, filter/cloudwatch_metrics, metric_start_time, batch/metrics]
       exporters: [debug, otlphttp/metrics]
     logs:
-      exporters: [debug, routing/cloudwatch_logs]
+      exporters: [debug, routing/cloudwatch_logs, count/frontend_proxy_http]
 {% for svc in log_stream_services %}
     logs/{{ svc }}:
       receivers: [routing/cloudwatch_logs]

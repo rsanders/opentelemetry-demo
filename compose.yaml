@@ -690,11 +690,14 @@ services:
     command: [
       "start",
       "--uri",
-      "file:./etc/flagd/demo.flagd.json"
+      "file:./etc/flagd/demo.flagd.json",
+      "--management-port",
+      "${FLAGD_MANAGEMENT_PORT}"
     ]
     ports:
       - "${FLAGD_PORT}"
       - "${FLAGD_OFREP_PORT}"
+      - "${FLAGD_MANAGEMENT_PORT}"
     volumes:
       - ./src/flagd:/etc/flagd
     logging: *logging
@@ -840,7 +843,9 @@ services:
       - "${OTEL_COLLECTOR_PORT_HTTP}"
     logging: *logging
     environment:
-      - AD_PROMETHEUS_PORT
+      - AD_PROMETHEUS_ADDR
+      - ENVOY_ADMIN_ADDR
+      - FLAGD_MANAGEMENT_ADDR
       - FRONTEND_PROXY_ADDR
       - HOST_FILESYSTEM
       - IMAGE_PROVIDER_HOST

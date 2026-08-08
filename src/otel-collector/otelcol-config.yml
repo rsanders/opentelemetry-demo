@@ -71,7 +71,31 @@ receivers:
         - job_name: ad
           scrape_interval: 10s
           static_configs:
-            - targets: ["ad:${env:AD_PROMETHEUS_PORT}"]
+            - targets: ["${env:AD_PROMETHEUS_ADDR}"]
+  # Envoy's admin interface exposes its internal stats (connection/request
+  # counters, upstream cluster health, etc.) in Prometheus format natively --
+  # envoy has no OTLP metrics exporter of its own, only traces and (via the
+  # access log) logs. usedonly=true skips stats envoy never incremented.
+  prometheus/envoy:
+    config:
+      scrape_configs:
+        - job_name: envoy
+          scrape_interval: 10s
+          metrics_path: /stats/prometheus
+          params:
+            usedonly: ["true"]
+          static_configs:
+            - targets: ["${env:ENVOY_ADMIN_ADDR}"]
+  # flagd's metrics-exporter defaults to Prometheus (served on its management
+  # port) rather than OTLP; --otel-collector-uri would switch it to OTLP but
+  # isn't set, so this is the only metrics signal flagd currently produces.
+  prometheus/flagd:
+    config:
+      scrape_configs:
+        - job_name: flagd
+          scrape_interval: 10s
+          static_configs:
+            - targets: ["${env:FLAGD_MANAGEMENT_ADDR}"]
   # Host metrics
   host_metrics:
     root_path: /hostfs
@@ -254,6 +278,21 @@ processors:
 
 connectors:
   span_metrics:
+  # Turns frontend-proxy's (envoy) OTel access log records into an HTTP
+  # request count metric broken down by route/method/status. Envoy's
+  # OpenTelemetry tracer extension doesn't yet expose native stats, so the
+  # access log -- which already carries http.route and
+  # http.response.status_code (see envoy.tmpl.yaml) -- is the source instead.
+  count/frontend_proxy_http:
+    logs:
+      http.server.request.count:
+        description: Total HTTP requests handled by the frontend-proxy (envoy), by route, method, and status code.
+        conditions:
+          - 'attributes["event.name"] == "proxy.access"'
+        attributes:
+          - key: http.route
+          - key: http.request.method
+          - key: http.response.status_code
 
 service:
   pipelines:
@@ -262,13 +301,13 @@ service:
       processors: [resourcedetection, memory_limiter, transform/sanitize_spans, gen_ai_normalizer]
       exporters: [debug, span_metrics]
     metrics:
-      receivers: [docker_stats, http_check/frontend-proxy, host_metrics, nginx, otlp, redis, postgresql, prometheus/ad, span_metrics]
+      receivers: [docker_stats, http_check/frontend-proxy, host_metrics, nginx, otlp, redis, postgresql, prometheus/ad, prometheus/envoy, prometheus/flagd, span_metrics, count/frontend_proxy_http]
       processors: [resourcedetection, memory_limiter]
       exporters: [debug]
     logs:
       receivers: [otlp]
       processors: [resourcedetection, memory_limiter, transform/sanitize_logs]
-      exporters: [debug]
+      exporters: [debug, count/frontend_proxy_http]
     profiles:
       receivers: [otlp]
       processors: [resourcedetection, filter/sanitize_profiles, memory_limiter]

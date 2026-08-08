@@ -26,4 +26,4 @@ const handler = async ({ method, query }: NextApiRequest, res: NextApiResponse<T
   }
 };
 
-export default InstrumentationMiddleware(handler);
+export default InstrumentationMiddleware('/api/shipping', handler);

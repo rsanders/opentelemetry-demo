@@ -129,6 +129,7 @@ export function buildCatalog(ctx: CatalogContext): ServiceSpec[] {
   const flagdHost = host('flagd');
   const flagdPort = requireEnv(env, 'FLAGD_PORT');
   const flagdOfrepPort = requireEnv(env, 'FLAGD_OFREP_PORT');
+  const flagdManagementPort = requireEnv(env, 'FLAGD_MANAGEMENT_PORT');
   // flagd-ui shares a task with flagd so the two can share a flag-config
   // volume, exactly as they share a bind mount under Compose. One task means
   // one IP, so both are reached at the flagd service's Cloud Map name.
@@ -652,8 +653,8 @@ export function buildCatalog(ctx: CatalogContext): ServiceSpec[] {
         {
           name: 'flagd',
           image: requireEnv(env, 'FLAGD_IMAGE'),
-          command: ['start', '--uri', 'file:./etc/flagd/demo.flagd.json'],
-          ports: [Number(flagdPort), Number(flagdOfrepPort)],
+          command: ['start', '--uri', 'file:./etc/flagd/demo.flagd.json', '--management-port', flagdManagementPort],
+          ports: [Number(flagdPort), Number(flagdOfrepPort), Number(flagdManagementPort)],
           configMountPath: '/etc/flagd',
           environment: {
             OTEL_EXPORTER_OTLP_ENDPOINT: otlpHttpEndpoint,
@@ -788,8 +789,9 @@ export function buildCatalog(ctx: CatalogContext): ServiceSpec[] {
             OTEL_COLLECTOR_HOST: '0.0.0.0',
             OTEL_COLLECTOR_PORT_GRPC: grpcPort,
             OTEL_COLLECTOR_PORT_HTTP: httpPort,
-            AD_PROMETHEUS_PORT: adPrometheusPort,
             AD_PROMETHEUS_ADDR: `${host('ad')}:${adPrometheusPort}`,
+            ENVOY_ADMIN_ADDR: `${host('frontend-proxy')}:${envoyAdminPort}`,
+            FLAGD_MANAGEMENT_ADDR: `${host('flagd')}:${flagdManagementPort}`,
             FRONTEND_PROXY_ADDR: frontendProxyAddr,
             IMAGE_PROVIDER_HOST: imageProviderHost,
             IMAGE_PROVIDER_PORT: imageProviderPort,
