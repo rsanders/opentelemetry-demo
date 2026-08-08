@@ -1,0 +1,131 @@
+# Copyright The OpenTelemetry Authors
+# SPDX-License-Identifier: Apache-2.0
+name: Full Build & Test Report
+
+# Manual, on-demand pipeline: build every image, run the repo's test suites,
+# stand the stack up, run the integration tests against it, and publish a
+# single report (branch, version, changed files, pass/fail per stage) to the
+# job summary. Not wired to push/pull_request — it duplicates work already
+# covered by checks.yml and run-telemetry-tests.yml and is meant to be
+# triggered by hand when a full end-to-end report is wanted.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  full-report:
+    name: Build, test, and report
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc
+          docker system prune -af
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c  # v4.2.0
+
+      - name: Create .env.override if missing
+        run: touch .env.override
+
+      - name: Gather branch, version, and changed files
+        id: meta
+        run: |
+          echo "branch=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+
+          version=$(grep -m1 '^IMAGE_VERSION=' .env | cut -d= -f2)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+          # Diff against main so the report shows what this branch actually
+          # changes; fall back to the previous commit for a run on main itself.
+          git fetch --depth=1 origin main
+          if [ "${GITHUB_REF_NAME}" != "main" ]; then
+            diff_range="origin/main...HEAD"
+          else
+            diff_range="HEAD~1...HEAD"
+          fi
+          {
+            echo "changed_files<<CHANGED_FILES_EOF"
+            git diff --name-status "$diff_range"
+            echo "CHANGED_FILES_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build all images
+        id: build
+        continue-on-error: true
+        run: make build
+
+      - name: Run frontend tests
+        id: frontend_tests
+        continue-on-error: true
+        run: make run-frontend-tests
+
+      - name: Start stack and run integration tests
+        id: integration_tests
+        continue-on-error: true
+        timeout-minutes: 30
+        env:
+          WARMUP_SECONDS: "300"
+          POLL_TIMEOUT: "240"
+          WARMUP_PROBE_TIMEOUT: "180"
+        run: make run-telemetry-tests-minimal
+
+      - name: Print service logs on integration failure
+        if: steps.integration_tests.outcome != 'success'
+        run: docker compose logs --tail=100 || true
+
+      - name: Ensure stack is stopped
+        if: always()
+        run: make stop || true
+
+      - name: Write summary report
+        if: always()
+        env:
+          BRANCH: ${{ steps.meta.outputs.branch }}
+          VERSION: ${{ steps.meta.outputs.version }}
+          CHANGED_FILES: ${{ steps.meta.outputs.changed_files }}
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+          FRONTEND_OUTCOME: ${{ steps.frontend_tests.outcome }}
+          INTEGRATION_OUTCOME: ${{ steps.integration_tests.outcome }}
+        run: |
+          icon() { [ "$1" = success ] && echo "✅ success" || echo "❌ $1"; }
+
+          {
+            echo "# Full Build & Test Report"
+            echo
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Branch | \`$BRANCH\` |"
+            echo "| Version (IMAGE_VERSION) | \`$VERSION\` |"
+            echo "| Commit | \`$GITHUB_SHA\` |"
+            echo "| Triggered by | @$GITHUB_ACTOR |"
+            echo
+            echo "## Results"
+            echo
+            echo "| Stage | Result |"
+            echo "|---|---|"
+            echo "| Build all images | $(icon "$BUILD_OUTCOME") |"
+            echo "| Frontend tests (Cypress) | $(icon "$FRONTEND_OUTCOME") |"
+            echo "| Start stack + integration tests | $(icon "$INTEGRATION_OUTCOME") |"
+            echo
+            echo "## Changed files (vs main)"
+            echo
+            echo '```'
+            if [ -n "$CHANGED_FILES" ]; then echo "$CHANGED_FILES"; else echo "(none)"; fi
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail job if any stage failed
+        if: steps.build.outcome != 'success' || steps.frontend_tests.outcome != 'success' || steps.integration_tests.outcome != 'success'
+        run: |
+          echo "One or more stages failed; see the job summary for details." >&2
+          exit 1
