@@ -118,6 +118,14 @@ just have nothing wired up to notify. AWS emails the address a
 subscription-confirmation link on the first apply, and alerts won't arrive
 until that's clicked.
 
+Before applying, you can validate and preview changes:
+
+```bash
+make validate   # validate Terraform config locally (no AWS credentials required)
+make plan       # show what terraform apply would create/change/destroy
+make fmt        # auto-format any Terraform source files you edited
+```
+
 ```bash
 cd deploy/aws
 make up
@@ -178,6 +186,22 @@ make update
 This re-applies any Terraform variable changes, re-syncs the repo to the
 instance, re-renders the AWS exporters config, and runs `docker compose up
 -d` again.
+
+If you only changed source code (no bind-mounted config files on services
+outside the default recreate list), a faster path skips recreating containers
+whose image/env/command didn't change:
+
+```bash
+make update-fast
+```
+
+This runs the same Terraform apply and Ansible playbook as `update`, but
+passes `fast_update=true` to Ansible, which tells it to skip forced container
+recreation for services that `docker compose up -d` would leave alone. The
+handful of services that bind-mount config files (`otel-collector`, `flagd`,
+`flagd-ui`, `product-catalog`) are always recreated regardless. Use plain
+`make update` if you changed a bind-mounted config file on a service not in
+that list.
 
 To include Kafka/accounting/fraud-detection (`compose.full.yaml`), set
 `compose_profile = "full"` in `terraform.tfvars` and run `make update`.
@@ -278,7 +302,14 @@ query it in Query Studio, or add a second PromQL alarm for it the same way
 make status                    # state of every container on the instance
 make logs SERVICE=cart         # tail one service's container logs
 make shell SERVICE=cart        # open a shell inside a running container
+make restart                   # restart every container without re-provisioning
 ```
+
+`make restart` runs `docker compose restart` on the instance over SSH — it
+bounces every running container without pulling new images, re-syncing the
+repo, or re-running Ansible. Use it when a service is wedged and needs a
+kick, not when you want to pick up a code or config change (use `make update`
+or `make update-fast` for that).
 
 These are the same three targets the sibling [`../aws-ecs/`](../aws-ecs/)
 deployment exposes, so the two stacks are driven the same way. Here they run
