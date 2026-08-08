@@ -19,6 +19,10 @@ Pick `aws/` for the cheapest way to get the demo running (~$120-150/mo);
 pick `aws-ecs/` to demo per-service isolation on ECS (~$270-310/mo, and see
 that README for why the same workload costs twice as much).
 
+See [`TESTING.md`](TESTING.md) for how to build and test the demo itself —
+both a one-shot local/CI report and the upstream repo's individual test
+suites — before deploying with either of the above.
+
 ## Requirements this was built against
 
 - Runs in the user's own AWS account, region `us-east-1`.
