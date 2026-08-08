@@ -21,6 +21,15 @@ and forwards everything the `otel-collector` service sees into CloudWatch:
   self-telemetry logs go to a separate `/otel-demo/otelcol` group instead, so
   they don't turn up in searches or trace/log correlations scoped to the app
   services' group.
+  - **Exception: `flagd`.** flagd (as of v0.16.0) has no OTLP log exporter and
+    doesn't stamp trace_id/span_id onto its own log lines, so it never reaches
+    this OTLP-logs pipeline at all. `compose.aws-override.yml` instead points
+    its Docker logging driver straight at CloudWatch (`awslogs`), landing in
+    the same `flagd` stream the routing table would have used. This gets
+    flagd's own logs into CloudWatch, but since they carry no trace_id, they
+    will not show up in the console's "logs for this trace" panel — only in
+    the `flagd` stream directly. It also means `docker logs flagd` no longer
+    works on the instance itself.
 - **Traces** → CloudWatch, via the `otlphttp` exporter pointed at CloudWatch's
   OpenTelemetry traces endpoint (`https://xray.<region>.amazonaws.com/v1/traces`),
   also `sigv4auth`-signed (SigV4 service name `xray` — same X-Ray ingestion API
