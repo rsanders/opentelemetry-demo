@@ -102,6 +102,30 @@ processors:
     send_batch_size: 200
     send_batch_max_size: 200
     timeout: 10s
+  # The logs endpoint's hard caps are 10,000 log events and 1 MB uncompressed
+  # per request (https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-OTLPEndpoint.html#CloudWatch-LimitsandRestrictions).
+  # Unlike the metrics/traces receivers, the batch processor has no
+  # byte-size dimension to enforce that 1 MB cap directly -- send_batch_size
+  # and send_batch_max_size only count log records. 500 is chosen well under
+  # the 10,000-event cap to leave headroom for that untracked byte dimension:
+  # it stays under 1 MB even at ~2 KB/record, comfortably above what this
+  # demo's structured logs run (debug-level collector self-telemetry
+  # included). timeout caps the other side: never hold a log more than 10s
+  # waiting for a batch to fill.
+  batch/logs:
+    send_batch_size: 500
+    send_batch_max_size: 500
+    timeout: 10s
+  # Compaction only (no `keys`): merges ResourceLogs/ResourceMetrics entries
+  # that already share an identical Resource+Scope instead of extracting new
+  # ones. Placed before batch/metrics and batch/logs below so the batch
+  # processors -- which concatenate many incoming export requests into fewer,
+  # larger ones -- aren't carrying one duplicate Resource+Scope per original
+  # request for the same service. Keeps requests further under the 16 KB
+  # per-unique-resource+scope cap that both the metrics and logs endpoints
+  # enforce, and makes send_batch_size closer to actual record count instead
+  # of inflated by repeated resource headers.
+  groupbyattrs:
 
 exporters:
   # CloudWatch's OpenTelemetry traces endpoint, replacing the awsxray exporter
@@ -191,28 +215,36 @@ connectors:
 
 service:
   extensions: [sigv4auth/metrics, sigv4auth/logs, sigv4auth/traces]
-  # The base config's telemetry.metrics/logs already loop the collector's own
+  # The base config's telemetry.metrics already loops the collector's own
   # self-telemetry back through its otlp receiver (127.0.0.1, via
-  # OTEL_COLLECTOR_HOST/PORT_HTTP), so it rides the same metrics/logs
-  # pipelines -- and thus the same CloudWatch exporters -- as everything else
-  # with no further wiring. What's left is the *level*: the defaults (Normal
-  # for metrics, Info for logs) omit some internal telemetry. Raising both
-  # gets the full set, at the cost of materially more self-generated log
-  # volume (and CloudWatch Logs ingestion cost) from the debug level.
+  # OTEL_COLLECTOR_HOST/PORT_HTTP), so it rides the same metrics pipeline --
+  # and thus the same CloudWatch exporter -- as everything else with no
+  # further wiring. metrics.level stays raised above the default (Normal) to
+  # get the full internal metric set; logs.level is left at the base
+  # config's default (Info) rather than Debug, which produced enough
+  # self-generated log volume to matter for CloudWatch Logs ingestion cost.
   telemetry:
     metrics:
       level: detailed
-    logs:
-      level: debug
   pipelines:
     traces:
       processors: [resourcedetection, memory_limiter, resource/aws_log_correlation, transform/sanitize_spans, gen_ai_normalizer]
-      exporters: [debug, span_metrics, otlphttp/traces]
+      # debug dropped from the base list: it prints every span to the
+      # collector's own stdout, which is unnecessary volume once spans are
+      # actually landing in X-Ray via otlphttp/traces below.
+      exporters: [span_metrics, otlphttp/traces]
     metrics:
-      processors: [resourcedetection, memory_limiter, resource/aws_log_correlation, filter/cloudwatch_metrics, metric_start_time, batch/metrics]
-      exporters: [debug, otlphttp/metrics]
+      processors: [resourcedetection, memory_limiter, resource/aws_log_correlation, filter/cloudwatch_metrics, metric_start_time, groupbyattrs, batch/metrics]
+      # debug dropped, same reasoning as the traces pipeline above.
+      exporters: [otlphttp/metrics]
     logs:
-      exporters: [debug, routing/cloudwatch_logs, count/frontend_proxy_http]
+      # processors repeats the base list (resourcedetection, memory_limiter,
+      # transform/sanitize_logs) since this key wasn't previously overridden
+      # here -- adding groupbyattrs/batch/logs means the array as a whole
+      # must be replaced, per the deep-merge note at the top of this file.
+      processors: [resourcedetection, memory_limiter, transform/sanitize_logs, groupbyattrs, batch/logs]
+      # debug dropped, same reasoning as the traces pipeline above.
+      exporters: [routing/cloudwatch_logs, count/frontend_proxy_http]
 {% for svc in log_stream_services %}
     logs/{{ svc }}:
       receivers: [routing/cloudwatch_logs]
