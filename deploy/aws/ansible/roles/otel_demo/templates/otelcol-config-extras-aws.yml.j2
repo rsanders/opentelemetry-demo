@@ -73,6 +73,21 @@ processors:
       - key: aws.log.group.names
         value: '{{ app_log_group }}'
         action: upsert
+  # Every app service already sets service.namespace itself, via
+  # OTEL_RESOURCE_ATTRIBUTES (.env's OTEL_SERVICE_NAMESPACE) -- but that's a
+  # static "opentelemetry-demo" shared across every deployment target
+  # (local, EC2, ECS), not this stack's actual identity. Upsert overrides it
+  # with project_name, the same value main.tf tags every resource with as
+  # awsApplication, so a service.namespace-based query/dashboard matches the
+  # same resources Resource Groups/myApplications groups under that tag.
+  # Also the only way collector-scraped signals (redis/postgresql/nginx/
+  # prometheus/envoy, none of which are OTel SDKs) get a service.namespace
+  # at all, since they never had one to begin with.
+  resource/aws_application:
+    attributes:
+      - key: service.namespace
+        value: '{{ project_name }}'
+        action: upsert
   # CloudWatch's OTLP metrics endpoint only supports Counter, Gauge, and
   # Histogram (https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/metrics-otel-send.html#metrics-otel-send-types).
   # Anything else -- Summary, ExponentialHistogram, or a typeless metric shell
@@ -212,6 +227,68 @@ connectors:
 {% endfor %}
       - condition: resource.attributes["service.name"] == "otelcol-contrib"
         pipelines: [logs/otel-collector]
+  # Emits one count metric per signal (spans, metric datapoints, log
+  # records), broken down by the dimensions needed to tell deployments and
+  # replicas apart: service.name identifies which service; Application and
+  # service.namespace both carry project_name (see resource/aws_application
+  # above), the same value awsApplication tags AWS resources with, so counts
+  # can be grouped/filtered the same way those resources are;
+  # deployment.environment.name is the demo's "env" (dev/staging/prod);
+  # service.instance.id and host.name disambiguate multiple concurrently
+  # running replicas of the same service -- service.instance.id is the OTel
+  # SDK's own per-process identity (present on app-emitted spans/logs), and
+  # host.name (set by resourcedetection, from the `system` detector) covers
+  # everything else, including collector-scraped signals with no SDK
+  # identity of their own.
+  count:
+    spans:
+      demo.span.count:
+        description: Count of spans received, by service and deployment identity.
+        attributes:
+          - key: service.name
+            default_value: unknown
+          - key: Application
+            default_value: unknown
+          - key: service.namespace
+            default_value: unknown
+          - key: deployment.environment.name
+            default_value: unknown
+          - key: service.instance.id
+            default_value: unknown
+          - key: host.name
+            default_value: unknown
+    datapoints:
+      demo.metric_datapoint.count:
+        description: Count of metric data points received, by service and deployment identity.
+        attributes:
+          - key: service.name
+            default_value: unknown
+          - key: Application
+            default_value: unknown
+          - key: service.namespace
+            default_value: unknown
+          - key: deployment.environment.name
+            default_value: unknown
+          - key: service.instance.id
+            default_value: unknown
+          - key: host.name
+            default_value: unknown
+    logs:
+      demo.log_record.count:
+        description: Count of log records received, by service and deployment identity.
+        attributes:
+          - key: service.name
+            default_value: unknown
+          - key: Application
+            default_value: unknown
+          - key: service.namespace
+            default_value: unknown
+          - key: deployment.environment.name
+            default_value: unknown
+          - key: service.instance.id
+            default_value: unknown
+          - key: host.name
+            default_value: unknown
 
 service:
   extensions: [sigv4auth/metrics, sigv4auth/logs, sigv4auth/traces]
@@ -228,23 +305,47 @@ service:
       level: detailed
   pipelines:
     traces:
-      processors: [resourcedetection, memory_limiter, resource/aws_log_correlation, transform/sanitize_spans, gen_ai_normalizer]
+      processors: [resourcedetection, memory_limiter, resource/aws_log_correlation, resource/aws_application, transform/sanitize_spans, gen_ai_normalizer]
       # debug dropped from the base list: it prints every span to the
       # collector's own stdout, which is unnecessary volume once spans are
-      # actually landing in X-Ray via otlphttp/traces below.
-      exporters: [span_metrics, otlphttp/traces]
+      # actually landing in X-Ray via otlphttp/traces below. count added so
+      # every span is tallied into demo.span.count (see the connector above)
+      # on its way to X-Ray.
+      exporters: [span_metrics, otlphttp/traces, count]
     metrics:
-      processors: [resourcedetection, memory_limiter, resource/aws_log_correlation, filter/cloudwatch_metrics, metric_start_time, groupbyattrs, batch/metrics]
+      # receivers isn't overridden here (inherits the base config's full
+      # list), unlike the sibling deploy/aws-ecs overlay, which drops
+      # docker_stats/host_metrics since Fargate can't serve them -- EC2 has
+      # both. count added as a receiver (not exporter) here: it's
+      # metrics/count_tap below, not this pipeline, that feeds the count
+      # connector, so demo.metric_datapoint.count's own data points don't
+      # loop back into the connector that produced them.
+      receivers: [docker_stats, http_check/frontend-proxy, host_metrics, nginx, otlp, redis, postgresql, prometheus/ad, prometheus/envoy, prometheus/flagd, span_metrics, count/frontend_proxy_http, count]
+      processors: [resourcedetection, memory_limiter, resource/aws_log_correlation, resource/aws_application, filter/cloudwatch_metrics, metric_start_time, groupbyattrs, batch/metrics]
       # debug dropped, same reasoning as the traces pipeline above.
       exporters: [otlphttp/metrics]
+    # Exists only to feed demo.metric_datapoint.count without the metrics
+    # pipeline above exporting to and receiving from count at the same time,
+    # which would have count re-counting its own previously emitted data
+    # points every interval. Same receivers as metrics (fanned out
+    # independently, not shared state), a minimal processor chain since
+    # nothing here is exported over the network, and no CloudWatch-specific
+    # processors -- those exist to make otlphttp/metrics requests valid,
+    # irrelevant to a pipeline whose only exporter is an in-process connector.
+    metrics/count_tap:
+      receivers: [docker_stats, http_check/frontend-proxy, host_metrics, nginx, otlp, redis, postgresql, prometheus/ad, prometheus/envoy, prometheus/flagd, span_metrics, count/frontend_proxy_http]
+      processors: [resourcedetection, memory_limiter, resource/aws_application]
+      exporters: [count]
     logs:
       # processors repeats the base list (resourcedetection, memory_limiter,
       # transform/sanitize_logs) since this key wasn't previously overridden
-      # here -- adding groupbyattrs/batch/logs means the array as a whole
-      # must be replaced, per the deep-merge note at the top of this file.
-      processors: [resourcedetection, memory_limiter, transform/sanitize_logs, groupbyattrs, batch/logs]
-      # debug dropped, same reasoning as the traces pipeline above.
-      exporters: [routing/cloudwatch_logs, count/frontend_proxy_http]
+      # here -- adding resource/aws_application/groupbyattrs/batch/logs means
+      # the array as a whole must be replaced, per the deep-merge note at the
+      # top of this file.
+      processors: [resourcedetection, memory_limiter, transform/sanitize_logs, resource/aws_application, groupbyattrs, batch/logs]
+      # debug dropped, same reasoning as the traces pipeline above. count
+      # added so every log record is tallied into demo.log_record.count.
+      exporters: [routing/cloudwatch_logs, count/frontend_proxy_http, count]
 {% for svc in log_stream_services %}
     logs/{{ svc }}:
       receivers: [routing/cloudwatch_logs]

@@ -803,6 +803,11 @@ export function buildCatalog(ctx: CatalogContext): ServiceSpec[] {
             AWS_REGION: ctx.config.region,
             APP_LOG_GROUP: ctx.appLogGroupName,
             OTELCOL_LOG_GROUP: ctx.otelcolLogGroupName,
+            // Same value bin/otel-demo-ecs.ts tags every resource with as
+            // awsApplication -- see resource/aws_application in
+            // otelcol-config-extras-aws.yml, which stamps it onto
+            // service.namespace so telemetry lines up with that tag.
+            PROJECT_NAME: ctx.config.projectName,
           },
         },
       ],
