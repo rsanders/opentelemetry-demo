@@ -131,15 +131,30 @@ processors:
     send_batch_size: 500
     send_batch_max_size: 500
     timeout: 10s
-  # Compaction only (no `keys`): merges ResourceLogs/ResourceMetrics entries
-  # that already share an identical Resource+Scope instead of extracting new
-  # ones. Placed before batch/metrics and batch/logs below so the batch
-  # processors -- which concatenate many incoming export requests into fewer,
-  # larger ones -- aren't carrying one duplicate Resource+Scope per original
-  # request for the same service. Keeps requests further under the 16 KB
-  # per-unique-resource+scope cap that both the metrics and logs endpoints
-  # enforce, and makes send_batch_size closer to actual record count instead
-  # of inflated by repeated resource headers.
+  # The traces endpoint's hard caps are 10,000 spans and 5 MB uncompressed
+  # per request (https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-OTLPEndpoint.html#CloudWatch-LimitsandRestrictions;
+  # there's also a 200 KB single-span cap and a 16 KB single-resource+scope
+  # cap, neither of which batch size controls). Same reasoning as
+  # batch/logs above: the batch processor only counts spans, it has no
+  # byte-size dimension to enforce the 5 MB cap directly, so 500 is chosen
+  # well under the 10,000-span cap to leave headroom for that untracked
+  # byte dimension -- it stays under 5 MB even at ~10 KB/span, well above
+  # what this demo's spans run. timeout caps the other side: never hold a
+  # span more than 15s waiting for a batch to fill.
+  batch/traces:
+    send_batch_size: 500
+    send_batch_max_size: 500
+    timeout: 15s
+  # Compaction only (no `keys`): merges ResourceSpans/ResourceLogs/
+  # ResourceMetrics entries that already share an identical Resource+Scope
+  # instead of extracting new ones. Placed before batch/traces, batch/metrics,
+  # and batch/logs below so the batch processors -- which concatenate many
+  # incoming export requests into fewer, larger ones -- aren't carrying one
+  # duplicate Resource+Scope per original request for the same service. Keeps
+  # requests further under the 16 KB per-unique-resource+scope cap that the
+  # traces, metrics, and logs endpoints all enforce, and makes send_batch_size
+  # closer to actual record count instead of inflated by repeated resource
+  # headers.
   groupbyattrs:
 
 exporters:
@@ -305,7 +320,7 @@ service:
       level: detailed
   pipelines:
     traces:
-      processors: [resourcedetection, memory_limiter, resource/aws_log_correlation, resource/aws_application, transform/sanitize_spans, gen_ai_normalizer]
+      processors: [resourcedetection, memory_limiter, resource/aws_log_correlation, resource/aws_application, transform/sanitize_spans, gen_ai_normalizer, groupbyattrs, batch/traces]
       # debug dropped from the base list: it prints every span to the
       # collector's own stdout, which is unnecessary volume once spans are
       # actually landing in X-Ray via otlphttp/traces below. count added so
