@@ -49,7 +49,7 @@ services:
       - OTEL_SERVICE_NAME=agent
     depends_on:
       otel-collector:
-        condition: service_started
+        condition: service_healthy
       product-catalog:
         condition: service_started
       mcp:
@@ -85,6 +85,8 @@ services:
     depends_on:
       frontend:
         condition: service_started
+      otel-collector:
+        condition: service_healthy
     logging:
       driver: "json-file"
       options:
@@ -117,6 +119,8 @@ services:
     depends_on:
       agent:
         condition: service_started
+      otel-collector:
+        condition: service_healthy
     logging:
       driver: "json-file"
       options:

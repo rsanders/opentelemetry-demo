@@ -75,7 +75,7 @@ otelcol-config: ## Print the otel-collector's fully resolved/merged configuratio
 	if [ "$$task" = "None" ] || [ -z "$$task" ]; then echo "No running task for service 'otel-collector'"; exit 1; fi; \
 	aws ecs execute-command --cluster $(STACK) --task "$$task" --container otel-collector \
 		--region $(REGION) --interactive \
-		--command "/otelcol-contrib print-config --config=/etc/otelcol-config.yml --config=/etc/otelcol-config-extras.yml --feature-gates=service.profilesSupport"
+		--command "/otelcol-contrib print-config --config=/etc/otelcol-config.yml --config=/etc/otelcol-config-extras.yml --feature-gates=service.profilesSupport,extension.healthcheck.useComponentStatus"
 
 # Kept so the target names match the sibling deploy/aws Makefile. There is no
 # host to SSH into here -- every service is a Fargate task.

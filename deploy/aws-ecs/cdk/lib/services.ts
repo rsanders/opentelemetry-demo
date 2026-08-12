@@ -785,7 +785,11 @@ export function buildCatalog(ctx: CatalogContext): ServiceSpec[] {
           command: [
             '--config=/etc/otelcol/otelcol-config.yml',
             '--config=/etc/otelcol/otelcol-config-extras.yml',
-            '--feature-gates=service.profilesSupport',
+            // otelcol-config.yml's health_check extension uses the v2
+            // grpc/http form (see compose.yaml's otel-collector healthcheck);
+            // that form requires this gate to parse at all, even though this
+            // ECS task doesn't act on it with its own health check yet.
+            '--feature-gates=service.profilesSupport,extension.healthcheck.useComponentStatus',
           ],
           ports: [Number(grpcPort), Number(httpPort)],
           configMountPath: '/etc/otelcol',

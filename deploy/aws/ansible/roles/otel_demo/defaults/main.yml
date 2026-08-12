@@ -6,6 +6,7 @@ fast_update: false
 # base without rebuilding the application from source.
 locally_extended_services:
   - ad
+  - otel-collector
 
 # Services that bind-mount config files by host path (see compose.yaml):
 # Compose only compares a container's *definition* (image, env, mount source

@@ -169,6 +169,16 @@ receivers:
 exporters:
   debug:
 
+extensions:
+  # Lets compose.yaml's healthcheck (grpc_health_probe, see
+  # src/otel-collector/Dockerfile) confirm the collector's pipelines are
+  # actually running, not just that the process has started. The grpc block
+  # requires the useComponentStatus feature gate (set via --feature-gates on
+  # the collector's command) since the http-only form is the stable default.
+  health_check:
+    grpc:
+      endpoint: 0.0.0.0:13134
+
 processors:
   memory_limiter:
     check_interval: 5s
@@ -311,6 +321,7 @@ connectors:
           - key: http.response.status_code
 
 service:
+  extensions: [health_check]
   pipelines:
     traces:
       receivers: [otlp]

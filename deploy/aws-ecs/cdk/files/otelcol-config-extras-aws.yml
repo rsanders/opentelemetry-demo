@@ -472,7 +472,10 @@ connectors:
             default_value: unknown
 
 service:
-  extensions: [sigv4auth/metrics, sigv4auth/logs, sigv4auth/traces]
+  # health_check must be repeated here -- the base config's service.extensions
+  # (otelcol-config.yml) is an array, and arrays are replaced, not merged,
+  # across --config layers.
+  extensions: [health_check, sigv4auth/metrics, sigv4auth/logs, sigv4auth/traces]
   # The base config's telemetry.metrics already loops the collector's own
   # self-telemetry back through its otlp receiver (127.0.0.1, via
   # OTEL_COLLECTOR_HOST/PORT_HTTP), so it rides the same metrics pipeline --

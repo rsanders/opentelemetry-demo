@@ -33,7 +33,7 @@ services:
       - OTEL_DOTNET_AUTO_TRACES_ENTITYFRAMEWORKCORE_INSTRUMENTATION_ENABLED=false
     depends_on:
       otel-collector:
-        condition: service_started
+        condition: service_healthy
       kafka:
         condition: service_healthy
     logging:
@@ -74,7 +74,7 @@ services:
       - _JAVA_OPTIONS
     depends_on:
       otel-collector:
-        condition: service_started
+        condition: service_healthy
       kafka:
         condition: service_healthy
     logging:
@@ -117,6 +117,9 @@ services:
       interval: 5s
       timeout: 10s
       retries: 10
+    depends_on:
+      otel-collector:
+        condition: service_healthy
     logging:
       driver: "json-file"
       options:
@@ -138,7 +141,7 @@ services:
       - "--config=/etc/otelcol-config.yml"
       - "--config=/etc/otelcol-config-full.yml"
       - "--config=/etc/otelcol-config-extras.yml"
-      - "--feature-gates=service.profilesSupport"
+      - "--feature-gates=service.profilesSupport,extension.healthcheck.useComponentStatus"
     volumes:
       - ${OTEL_COLLECTOR_CONFIG}:/etc/otelcol-config.yml
       - ${OTEL_COLLECTOR_CONFIG_FULL}:/etc/otelcol-config-full.yml

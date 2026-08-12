@@ -51,11 +51,11 @@ Ansible installs Docker on the instance and runs `docker compose up -d`
 against a synced copy of the repo, after templating AWS exporters into the
 collector's existing customization seam
 (`src/otel-collector/otelcol-config-extras.yml`) — no upstream files are
-modified. After pulling the public Compose images, Ansible builds a thin local
-wrapper around the upstream `ad` image that adds only `grpc_health_probe`; the
-application itself and its dependencies are not rebuilt. This supplies the
-binary required by the deployment's gRPC health check until it is present in
-the public image. A small Ansible-deployed compose override additionally
+modified. After pulling the public Compose images, Ansible builds thin local
+wrappers around the upstream `ad` and `otel-collector` images that add only
+`grpc_health_probe`; neither application itself is rebuilt. This supplies the
+binary required by their gRPC health checks until it is present in the public
+images. A small Ansible-deployed compose override additionally
 publishes `frontend-proxy` on port 80 (alongside its usual 8080), so the app is
 reachable on the standard HTTP port at a fixed IP that survives instance
 replacement.
@@ -246,7 +246,7 @@ by Terraform (`terraform/monitoring.tf`, `alerts.tf`):
   timer and checks every container compose.yaml/compose.full.yaml starts, by
   its fixed `container_name`. For most services that means reading Docker's
   own `HEALTHCHECK` status (falling back to `State.Running` for the few
-  without one: `cart`, `flagd`, `otel-collector`); for the handful that are
+  without one: `cart`, `flagd`); for the handful that are
   genuinely HTTP (`frontend`, `frontend-proxy`, `image-provider`, `flagd-ui`,
   `telemetry-docs`, plus `flagd`'s management port) it additionally does a
   real `GET` against the container's own docker-network IP. Both the up/down

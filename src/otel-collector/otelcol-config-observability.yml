@@ -62,7 +62,11 @@ extensions:
         demo.collector.role: gateway
 
 service:
-  extensions: [opamp]
+  # health_check must be repeated here -- service.extensions is an array, and
+  # arrays are replaced, not merged, across --config layers (see
+  # otelcol-config-extras.yml's warning). Dropping it silently disables
+  # compose.yaml's otel-collector healthcheck (grpc_health_probe on :13134).
+  extensions: [health_check, opamp]
   pipelines:
     traces:
       exporters: [debug, otlp_grpc/jaeger, span_metrics]

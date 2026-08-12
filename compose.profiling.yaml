@@ -26,7 +26,8 @@ services:
       - /sys/fs/cgroup:/sys/fs/cgroup:ro
       - /proc:/proc:ro
     depends_on:
-      - otel-collector
+      otel-collector:
+        condition: service_healthy
 
   firepit:
     image: ${FIREPIT_IMAGE}

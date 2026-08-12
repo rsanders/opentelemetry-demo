@@ -70,7 +70,7 @@ services:
       retries: 20
     depends_on:
       otel-collector:
-        condition: service_started
+        condition: service_healthy
       flagd:
         condition: service_started
     logging: *logging
@@ -105,7 +105,7 @@ services:
       valkey-cart:
         condition: service_healthy
       otel-collector:
-        condition: service_started
+        condition: service_healthy
       flagd:
         condition: service_started
     logging: *logging
@@ -162,7 +162,7 @@ services:
       shipping:
         condition: service_started
       otel-collector:
-        condition: service_started
+        condition: service_healthy
       flagd:
         condition: service_started
     read_only: true
@@ -204,7 +204,7 @@ services:
       retries: 20
     depends_on:
       otel-collector:
-        condition: service_started
+        condition: service_healthy
     logging: *logging
 
   # Email service
@@ -240,7 +240,7 @@ services:
       retries: 20
     depends_on:
       otel-collector:
-        condition: service_started
+        condition: service_healthy
     logging: *logging
 
   # Frontend
@@ -303,7 +303,7 @@ services:
       shipping:
         condition: service_started
       otel-collector:
-        condition: service_started
+        condition: service_healthy
       image-provider:
         condition: service_healthy
       flagd:
@@ -370,6 +370,8 @@ services:
         condition: service_healthy
       telemetry-docs:
         condition: service_healthy
+      otel-collector:
+        condition: service_healthy
     dns_search: ""
 
   # image-provider
@@ -402,7 +404,7 @@ services:
       retries: 20
     depends_on:
       otel-collector:
-        condition: service_started
+        condition: service_healthy
     logging: *logging
 
   # Load Generator
@@ -448,6 +450,8 @@ services:
         condition: service_healthy
       flagd:
         condition: service_started
+      otel-collector:
+        condition: service_healthy
     logging: *logging
 
   # Payment service
@@ -494,7 +498,7 @@ services:
       retries: 20
     depends_on:
       otel-collector:
-        condition: service_started
+        condition: service_healthy
       flagd:
         condition: service_started
     logging: *logging
@@ -535,7 +539,7 @@ services:
       retries: 20
     depends_on:
       otel-collector:
-        condition: service_started
+        condition: service_healthy
       flagd:
         condition: service_started
       astronomy-db:
@@ -580,7 +584,7 @@ services:
       retries: 20
     depends_on:
       otel-collector:
-        condition: service_started
+        condition: service_healthy
     logging: *logging
 
   # Recommendation service
@@ -620,7 +624,7 @@ services:
       product-catalog:
         condition: service_started
       otel-collector:
-        condition: service_started
+        condition: service_healthy
       flagd:
         condition: service_started
     logging: *logging
@@ -660,7 +664,7 @@ services:
       retries: 20
     depends_on:
       otel-collector:
-        condition: service_started
+        condition: service_healthy
       flagd:
         condition: service_started
     read_only: true
@@ -700,6 +704,9 @@ services:
       - "${FLAGD_MANAGEMENT_PORT}"
     volumes:
       - ./src/flagd:/etc/flagd
+    depends_on:
+      otel-collector:
+        condition: service_healthy
     logging: *logging
 
   # Flagd UI for configuring the feature flag service
@@ -734,7 +741,7 @@ services:
       retries: 20
     depends_on:
       otel-collector:
-        condition: service_started
+        condition: service_healthy
       flagd:
         condition: service_started
     volumes:
@@ -767,6 +774,9 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+    depends_on:
+      otel-collector:
+        condition: service_healthy
     logging: *logging
 
   # PostgreSQL database for the astronomy demo
@@ -823,6 +833,16 @@ services:
   otel-collector:
     image: ${COLLECTOR_CONTRIB_IMAGE}
     container_name: otel-collector
+    # The published image has no shell/HTTP client for a Docker healthcheck
+    # to exec into, so this wraps it with only grpc_health_probe added (see
+    # src/otel-collector/Dockerfile); the collector itself is unmodified.
+    build:
+      context: ./
+      dockerfile: ./src/otel-collector/Dockerfile
+      cache_from:
+        - ${COLLECTOR_CONTRIB_IMAGE}
+      args:
+        COLLECTOR_CONTRIB_IMAGE: ${COLLECTOR_CONTRIB_IMAGE}
     deploy:
       resources:
         limits:
@@ -831,7 +851,7 @@ services:
     command:
       - --config=/etc/otelcol-config.yml
       - --config=/etc/otelcol-config-extras.yml
-      - --feature-gates=service.profilesSupport
+      - --feature-gates=service.profilesSupport,extension.healthcheck.useComponentStatus
     user: 0:0
     volumes:
       - ${HOST_FILESYSTEM}:/hostfs:ro
@@ -841,6 +861,12 @@ services:
     ports:
       - "${OTEL_COLLECTOR_PORT_GRPC}"
       - "${OTEL_COLLECTOR_PORT_HTTP}"
+    healthcheck:
+      test: ["CMD", "/grpc_health_probe", "-addr=:13134"]
+      start_period: 20s
+      interval: 5s
+      timeout: 5s
+      retries: 20
     logging: *logging
     environment:
       - AD_PROMETHEUS_ADDR
