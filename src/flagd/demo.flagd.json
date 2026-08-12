@@ -93,6 +93,15 @@
         "on": 100
       }
     },
+    "loadGeneratorFloodHomepage": {
+      "defaultVariant": "off",
+      "description": "Flood the frontend with a large amount of requests.",
+      "state": "ENABLED",
+      "variants": {
+        "off": 0,
+        "on": 100
+      }
+    },
     "loadGeneratorTraffic": {
       "defaultVariant": "on",
       "description": "Enable synthetic traffic from the load generator. Turn off to pause all load-generator scenarios.",

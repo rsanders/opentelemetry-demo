@@ -7,6 +7,9 @@ the release.
 
 ## Unreleased
 
+* [flagd] Restore the `loadGeneratorFloodHomepage` flag to the deployed flagd
+  configuration, disabled by default, so the k6 load generator can evaluate and
+  configure it
 * [react-native-app] Render missing `City` and `State` input fields in `CheckoutForm`
   ([#3754](https://github.com/open-telemetry/opentelemetry-demo/issues/3754))
 * [react-native-app] Fix `ProductCard` price calculation where `nanos` was

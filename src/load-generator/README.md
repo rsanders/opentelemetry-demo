@@ -40,6 +40,8 @@ dominates over checkout:
 
 ## Controlling traffic and concurrency via feature flags
 
+* `loadGeneratorFloodHomepage` - sends 100 additional homepage requests when
+  turned on. It is off by default.
 * `loadGeneratorTraffic` - pauses all synthetic traffic (both scenarios) when
   turned off, checked every iteration with no restart required.
 * `loadGeneratorVUs` - sets the number of concurrent virtual users the HTTP
