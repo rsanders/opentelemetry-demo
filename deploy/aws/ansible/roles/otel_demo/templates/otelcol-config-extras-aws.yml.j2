@@ -40,6 +40,14 @@ extensions:
     service: 'xray'
     region: {{ aws_region }}
 
+receivers:
+  # flagd v0.16 has OTLP metrics/traces support but no OTLP logs exporter.
+  # Docker forwards only flagd's stdout to this host-published receiver; its
+  # dedicated pipeline below assigns the missing resource identity before the
+  # existing routing connector sends it to CloudWatch over OTLP/HTTP.
+  fluent_forward/flagd:
+    endpoint: 0.0.0.0:8006
+
 processors:
   # Adds the `ec2` detector on top of the base config's [env, docker, system]
   # so traces/logs/metrics carry cloud.provider, cloud.platform, cloud.region,
@@ -87,6 +95,11 @@ processors:
     attributes:
       - key: service.namespace
         value: '{{ project_name }}'
+        action: upsert
+  resource/flagd_logs:
+    attributes:
+      - key: service.name
+        value: flagd
         action: upsert
   # The host_metrics process scraper copies full process commands into
   # resource attributes. On this host, process.command_line reaches 5,375
@@ -403,6 +416,13 @@ service:
       # debug dropped, same reasoning as the traces pipeline above. count
       # added so every log record is tallied into demo.log_record.count.
       exporters: [routing/cloudwatch_logs, count/frontend_proxy_http, count, signal_to_metrics/cloudwatch_partial_success]
+    # Docker's Fluent Forward driver supplies stdout records and container
+    # metadata, but no OTel Resource. Add flagd's identity here, then reuse the
+    # same sanitization, batching, routing, and OTLP exporter path as SDK logs.
+    logs/flagd-stdout:
+      receivers: [fluent_forward/flagd]
+      processors: [memory_limiter, transform/sanitize_logs, resource/flagd_logs, resource/aws_application, groupbyattrs, batch/logs]
+      exporters: [routing/cloudwatch_logs, count]
 {% for svc in log_stream_services %}
     logs/{{ svc }}:
       receivers: [routing/cloudwatch_logs]

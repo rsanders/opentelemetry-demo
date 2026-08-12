@@ -1,29 +1,27 @@
 # Deployed by Ansible (roles/otel_demo) alongside the upstream compose files.
-# Rendered as a template (not a static copy) so the flagd logging block below
-# can interpolate aws_region/app_log_group from group_vars/inventory.
 # `ports` entries merge (concatenate) across -f files per the Compose spec,
 # so this adds a :80 publish for frontend-proxy without touching compose.yaml.
 services:
+  otel-collector:
+    # Docker's logging driver runs in the host daemon, outside the Compose
+    # network, so it cannot reach the collector by service name. Publish the
+    # Fluent Forward receiver on loopback only; flagd's stdout enters here and
+    # leaves the collector through the existing OTLP/HTTP logs exporter.
+    ports:
+      - "127.0.0.1:8006:8006"
   frontend-proxy:
     ports:
       - "80:8080"
-  # flagd (github.com/open-feature/flagd, as of v0.16.0) has no OTLP log
-  # exporter and doesn't stamp trace_id/span_id onto its own log lines, so it
-  # can never reach the OTLP-logs pipeline the other services use (see
-  # otelcol-config-extras-aws.yml.j2) -- there's simply nothing for it to
-  # send. Routing its stdout straight to CloudWatch via the awslogs driver at
-  # least gets flagd's own logs (sync/eval errors, startup) visible there,
-  # into the "flagd" stream already provisioned by cloudwatch.tf. This
-  # replaces compose.yaml's default json-file driver for this service only,
-  # which means `docker logs flagd` no longer works on the instance itself --
-  # check CloudWatch instead. These logs are NOT trace-correlated (flagd logs
-  # carry no trace_id), so CloudWatch's "view logs for this trace" panel on a
-  # trace still won't surface them; this only makes flagd's logs findable in
-  # the flagd stream directly.
+  # flagd v0.16 can export metrics and traces over OTLP but not its operational
+  # logs. Send stdout to the collector's Fluent Forward receiver instead; the
+  # dedicated logs/flagd-stdout pipeline converts it to OTel logs and uses the
+  # normal OTLP CloudWatch path. Async mode prevents a collector restart from
+  # blocking flagd startup, buffering records until the receiver reconnects.
   flagd:
     logging:
-      driver: awslogs
+      driver: fluentd
       options:
-        awslogs-region: "{{ aws_region }}"
-        awslogs-group: "{{ app_log_group }}"
-        awslogs-stream: "flagd"
+        fluentd-address: "tcp://127.0.0.1:8006"
+        fluentd-async: "true"
+        fluentd-sub-second-precision: "true"
+        tag: "flagd"
