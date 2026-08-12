@@ -63,7 +63,7 @@ services:
       # Workaround on OSX for https://bugs.openjdk.org/browse/JDK-8345296
       - _JAVA_OPTIONS
     healthcheck:
-      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/${AD_PORT}'"]
+      test: ["CMD", "/bin/grpc_health_probe", "-addr=:${AD_PORT}"]
       start_period: 20s
       interval: 5s
       timeout: 5s
