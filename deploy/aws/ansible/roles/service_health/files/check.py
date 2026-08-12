@@ -58,9 +58,11 @@ SERVICES = [
 # management port, 8014, which this repo's compose.yaml never overrides or
 # publishes (https://flagd.dev/reference/monitoring/). Every other service
 # here is gRPC or plain TCP and relies on the Docker health/running check
-# above instead.
+# above instead. frontend is the other odd one: compose.yaml injects
+# FRONTEND_PORT into its container as plain PORT (the Node convention), so
+# its own environment never has a FRONTEND_PORT key.
 HTTP_CHECKS = {
-    "frontend": ("FRONTEND_PORT", "/"),
+    "frontend": ("PORT", "/"),
     "frontend-proxy": ("ENVOY_ADMIN_PORT", "/ready"),
     "image-provider": ("IMAGE_PROVIDER_PORT", "/status"),
     "flagd-ui": ("FLAGD_UI_PORT", "/"),
