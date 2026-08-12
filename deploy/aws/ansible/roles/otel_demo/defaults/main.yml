@@ -1,10 +1,10 @@
 ---
 fast_update: false
 
-# These services have deployment-specific source changes that are not present
-# in the public images pulled from ghcr.io. Build them from the synced checkout
-# after pulling so Compose starts the local image with those changes included.
-locally_built_services:
+# These services wrap a pulled public image with a small deployment-specific
+# layer. Build them after pulling so their Dockerfiles can use that image as a
+# base without rebuilding the application from source.
+locally_extended_services:
   - ad
 
 # Services that bind-mount config files by host path (see compose.yaml):

@@ -2,6 +2,15 @@
 # `ports` entries merge (concatenate) across -f files per the Compose spec,
 # so this adds a :80 publish for frontend-proxy without touching compose.yaml.
 services:
+  ad:
+    # Extend the already-pulled public image with the probe used by
+    # compose.yaml's gRPC health check. This avoids rebuilding the Java
+    # application and all of its Gradle dependencies on every deployment.
+    build:
+      context: .
+      dockerfile: deploy/aws/Dockerfile.ad
+      args:
+        AD_BASE_IMAGE: ${IMAGE_NAME}:${DEMO_VERSION}-ad
   otel-collector:
     # Docker's logging driver runs in the host daemon, outside the Compose
     # network, so it cannot reach the collector by service name. Publish the

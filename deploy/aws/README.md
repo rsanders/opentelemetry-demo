@@ -51,11 +51,12 @@ Ansible installs Docker on the instance and runs `docker compose up -d`
 against a synced copy of the repo, after templating AWS exporters into the
 collector's existing customization seam
 (`src/otel-collector/otelcol-config-extras.yml`) — no upstream files are
-modified. After pulling the public Compose images, Ansible builds the `ad`
-image locally from that synced checkout because this deployment's gRPC health
-check requires the probe added by `src/ad/Dockerfile`, which is not yet present
-in the public `latest-ad` image. A small Ansible-deployed compose override additionally publishes
-`frontend-proxy` on port 80 (alongside its usual 8080), so the app is
+modified. After pulling the public Compose images, Ansible builds a thin local
+wrapper around the upstream `ad` image that adds only `grpc_health_probe`; the
+application itself and its dependencies are not rebuilt. This supplies the
+binary required by the deployment's gRPC health check until it is present in
+the public image. A small Ansible-deployed compose override additionally
+publishes `frontend-proxy` on port 80 (alongside its usual 8080), so the app is
 reachable on the standard HTTP port at a fixed IP that survives instance
 replacement.
 

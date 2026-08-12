@@ -1,0 +1,13 @@
+# Copyright The OpenTelemetry Authors
+# SPDX-License-Identifier: Apache-2.0
+
+ARG AD_BASE_IMAGE=ghcr.io/open-telemetry/demo:latest-ad
+
+FROM ghcr.io/grpc-ecosystem/grpc-health-probe:v0.4.53@sha256:a732f1b3a737926c2902393809b344c9f293b62f7069dbd0614caebd298b2e8d AS grpc-health-probe
+
+# The AWS deployment pulls this upstream image before building, then replaces
+# its local tag with this thin wrapper. Only the health probe is added; the ad
+# application and its runtime remain byte-for-byte from the published image.
+FROM ${AD_BASE_IMAGE}
+
+COPY --from=grpc-health-probe /ko-app/grpc-health-probe /bin/grpc_health_probe

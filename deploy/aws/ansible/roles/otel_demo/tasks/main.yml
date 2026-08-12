@@ -45,19 +45,19 @@
   environment:
     HOME: /home/ec2-user
 
-- name: Build deployment-local service images
-  # The public ad image does not contain this branch's grpc_health_probe yet.
-  # Pull first for its build cache, then replace its local tag with an image
-  # built from the just-synchronized checkout before Compose starts services.
+- name: Build deployment-local image extensions
+  # The public ad image lacks grpc_health_probe. Its AWS-only Dockerfile uses
+  # that pulled image as the final-stage base and copies in only the probe,
+  # avoiding a source/Gradle rebuild while replacing the local tag Compose uses.
   ansible.builtin.shell: >-
     docker compose {{ compose_file_flags[compose_profile] }} -f compose.aws-override.yml
-    build {{ locally_built_services | join(' ') }}
+    build {{ locally_extended_services | join(' ') }}
   args:
     chdir: "{{ repo_dest }}"
   become_user: ec2-user
   environment:
     HOME: /home/ec2-user
-  when: locally_built_services | length > 0
+  when: locally_extended_services | length > 0
 
 - name: Start the demo stack
   # --force-recreate (default path): several services (e.g. otel-collector)
