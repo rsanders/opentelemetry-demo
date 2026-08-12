@@ -235,13 +235,11 @@ processors:
     trace_statements:
       - context: span
         statements:
-          # The flagd Java provider intentionally rotates its long-lived EventStream every 600s
-          # and reconnects automatically, but gRPC reports the deadline as an error. Mark only
-          # that expected client-side timeout as successful while retaining its original gRPC
-          # status attributes; shorter EventStream failures remain errors.
+          # flagd providers intentionally rotate their long-lived EventStream every 600s and
+          # reconnect automatically, but gRPC reports the deadline on both sides as an error.
+          # Mark only that expected timeout as successful for every service while retaining its
+          # original gRPC status attributes; shorter EventStream failures remain errors.
           - set(span.attributes["demo.expected_timeout"], true) where
-            resource.attributes["service.name"] == "ad" and
-            span.kind == SPAN_KIND_CLIENT and
             span.name == "flagd.evaluation.v2.Service/EventStream" and
             (span.end_time - span.start_time) >= Duration("599s") and
             (span.end_time - span.start_time) <= Duration("601s") and
