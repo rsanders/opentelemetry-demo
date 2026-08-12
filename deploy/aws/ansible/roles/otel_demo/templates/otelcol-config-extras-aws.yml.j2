@@ -88,6 +88,31 @@ processors:
       - key: service.namespace
         value: '{{ project_name }}'
         action: upsert
+  # The host_metrics process scraper copies full process commands into
+  # resource attributes. On this host, process.command_line reaches 5,375
+  # characters (the ad service's Java classpath) and process.command reaches
+  # 1,151 characters (Chromium), but CloudWatch's OTLP metrics endpoint caps
+  # resource string values at 1,024 characters and silently drops every data
+  # point carrying a longer value. Remove these high-cardinality command fields
+  # before export; executable name/path and process.pid still identify the
+  # process without exporting command arguments or environment-derived values.
+  resource/sanitize_cloudwatch_metrics:
+    attributes:
+      - key: process.command
+        action: delete
+      - key: process.command_line
+        action: delete
+  # Keep every other resource attribute, but truncate any string that exceeds
+  # CloudWatch's 1,024-character limit. The resource processor above handles
+  # the known host_metrics offenders; this transform is the safety net for
+  # future receivers or SDKs so one oversized value cannot drop its metric
+  # data points at the backend. false means nested maps are traversed too.
+  transform/sanitize_cloudwatch_metric_resources:
+    error_mode: ignore
+    metric_statements:
+      - context: resource
+        statements:
+          - truncate_all(resource.attributes, 1024, false)
   # CloudWatch's OTLP metrics endpoint only supports Counter, Gauge, and
   # Histogram (https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/metrics-otel-send.html#metrics-otel-send-types).
   # Anything else -- Summary, ExponentialHistogram, or a typeless metric shell
@@ -229,6 +254,23 @@ exporters:
       authenticator: sigv4auth/logs
 
 connectors:
+  # CloudWatch returns HTTP success for a partially accepted OTLP request, so
+  # the exporter records the exact rejected point count only in a structured
+  # "Partial success response" log. Convert that dropped_data_points value to
+  # a delta monotonic OTLP metric instead of counting warning events: one event
+  # can represent many dropped points. The connector is an exporter on the
+  # logs pipeline and a receiver on the metrics pipeline below, so the metric
+  # follows the same processors and otlphttp/metrics exporter as app metrics.
+  signal_to_metrics/cloudwatch_partial_success:
+    error_mode: ignore
+    logs:
+      - name: demo.collector.exporter.dropped_metric_data_points
+        description: Number of metric data points the OTLP backend reported dropping.
+        conditions:
+          - 'body == "Partial success response" and attributes["dropped_data_points"] != nil'
+        sum:
+          value: Int(attributes["dropped_data_points"])
+          monotonic: true
   # Splits the logs pipeline by service.name so each service's exporter
   # (above) can point at its own static x-aws-log-stream header -- see the
   # comment on the otlphttp/logs/* exporters for why this indirection exists.
@@ -335,8 +377,8 @@ service:
       # metrics/count_tap below, not this pipeline, that feeds the count
       # connector, so demo.metric_datapoint.count's own data points don't
       # loop back into the connector that produced them.
-      receivers: [docker_stats, http_check/frontend-proxy, host_metrics, nginx, otlp, redis, postgresql, prometheus/ad, prometheus/envoy, prometheus/flagd, span_metrics, count/frontend_proxy_http, count]
-      processors: [resourcedetection, memory_limiter, resource/aws_log_correlation, resource/aws_application, filter/cloudwatch_metrics, metric_start_time, groupbyattrs, batch/metrics]
+      receivers: [docker_stats, http_check/frontend-proxy, host_metrics, nginx, otlp, redis, postgresql, prometheus/ad, prometheus/envoy, prometheus/flagd, span_metrics, count/frontend_proxy_http, count, signal_to_metrics/cloudwatch_partial_success]
+      processors: [resourcedetection, memory_limiter, resource/aws_log_correlation, resource/aws_application, resource/sanitize_cloudwatch_metrics, transform/sanitize_cloudwatch_metric_resources, filter/cloudwatch_metrics, metric_start_time, groupbyattrs, batch/metrics]
       # debug dropped, same reasoning as the traces pipeline above.
       exporters: [otlphttp/metrics]
     # Exists only to feed demo.metric_datapoint.count without the metrics
@@ -360,7 +402,7 @@ service:
       processors: [resourcedetection, memory_limiter, transform/sanitize_logs, resource/aws_application, groupbyattrs, batch/logs]
       # debug dropped, same reasoning as the traces pipeline above. count
       # added so every log record is tallied into demo.log_record.count.
-      exporters: [routing/cloudwatch_logs, count/frontend_proxy_http, count]
+      exporters: [routing/cloudwatch_logs, count/frontend_proxy_http, count, signal_to_metrics/cloudwatch_partial_success]
 {% for svc in log_stream_services %}
     logs/{{ svc }}:
       receivers: [routing/cloudwatch_logs]

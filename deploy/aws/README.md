@@ -296,6 +296,14 @@ by Terraform (`terraform/monitoring.tf`, `alerts.tf`):
 query it in Query Studio, or add a second PromQL alarm for it the same way
 `service_down` is defined if you want paging on repeated restarts too.
 
+The collector also turns every metrics-exporter partial-success response into
+the OTLP counter `demo.collector.exporter.dropped_metric_data_points`. Each
+delta is the backend's `dropped_data_points` value, rather than a count of log
+events, so summing it over a time window quantifies the actual telemetry
+coverage loss. It follows the existing metrics pipeline into CloudWatch's OTel
+metric store and is queried in Query Studio like the other OTLP metrics; no
+classic CloudWatch namespace or log metric filter is involved.
+
 ## Operating it
 
 ```bash
