@@ -21,7 +21,7 @@ COMPOSE := docker compose $(COMPOSE_FILES_$(or $(COMPOSE_PROFILE),core)) -f comp
 # $(1) extra ssh flags, $(2) the command to run in the repo directory.
 remote = cd $(TF_DIR) && bash -c "$$(terraform output -raw ssh_command) $(1) 'cd $(REPO_DEST) && $(2)'"
 
-.PHONY: fmt validate plan up update update-fast down outputs status restart logs shell otelcol-config ssh ssm
+.PHONY: fmt validate plan up update update-fast down outputs status status-all restart logs shell otelcol-config ssh ssm
 
 fmt: ## Format the Terraform files
 	cd $(TF_DIR) && terraform fmt -recursive
@@ -64,6 +64,12 @@ outputs: ## Print the app URL, ssh command, etc.
 
 status: ## Show the state of every container on the instance
 	@$(call remote,,$(COMPOSE) ps)
+
+# `compose ps --all` includes stopped containers but still omits an expected
+# service whose container was never created or has since been removed. Walk the
+# resolved Compose service list so those gaps are reported explicitly too.
+status-all: ## Check every expected container, including missing/stopped ones
+	@$(call remote,,failed=0; echo SERVICE STATUS; for service in \$$($(COMPOSE) config --services); do container=\$$($(COMPOSE) ps --all -q \$$service); if [ -z \$$container ]; then echo \$$service MISSING; failed=1; else state=\$$(docker inspect --format={{.State.Status}} \$$container); echo \$$service \$$state; if [ \$$state != running ]; then failed=1; fi; fi; done; exit \$$failed)
 
 restart: ## Restart every container on the instance without re-provisioning
 	@$(call remote,,$(COMPOSE) restart)

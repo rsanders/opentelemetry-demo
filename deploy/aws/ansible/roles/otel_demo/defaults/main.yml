@@ -1,6 +1,12 @@
 ---
 fast_update: false
 
+# These services have deployment-specific source changes that are not present
+# in the public images pulled from ghcr.io. Build them from the synced checkout
+# after pulling so Compose starts the local image with those changes included.
+locally_built_services:
+  - ad
+
 # Services that bind-mount config files by host path (see compose.yaml):
 # Compose only compares a container's *definition* (image, env, mount source
 # paths, command), never bind-mounted file *content*, so a fast_update's
