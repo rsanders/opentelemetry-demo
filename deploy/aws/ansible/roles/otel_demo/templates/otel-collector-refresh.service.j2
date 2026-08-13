@@ -1,0 +1,22 @@
+[Unit]
+Description=Restart otel-collector so its docker_stats receiver re-discovers the current container fleet
+# Workaround for an unpatched upstream bug (confirmed against
+# opentelemetry-collector-contrib's main branch, internal/docker/docker.go):
+# dockerstatsreceiver's ContainerEventLoop subscribes to the Docker /events
+# endpoint with an RFC3339-formatted `since` value, but this Docker daemon
+# rejects that format ("invalid seconds ... invalid syntax") and only
+# accepts a Unix timestamp. The event subscription silently never delivers
+# anything as a result, so the receiver never learns about containers that
+# start after its own LoadContainerList() snapshot at startup -- container.*
+# metrics simply stop growing to cover new/recreated containers. Restarting
+# otel-collector periodically forces a fresh LoadContainerList() snapshot,
+# which is unaffected by the bug (it's a plain container list, not an
+# events subscription), giving eventual coverage of the current fleet.
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=ec2-user
+WorkingDirectory={{ repo_dest }}
+ExecStart=/usr/bin/docker compose {{ compose_file_flags[compose_profile] }} -f compose.aws-override.yml restart otel-collector

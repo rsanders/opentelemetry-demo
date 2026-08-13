@@ -90,3 +90,26 @@
   become_user: ec2-user
   environment: "{{ compose_environment }}"
   when: fast_update
+
+- name: Deploy the otel-collector docker_stats refresh timer (workaround for unpatched upstream event-loop bug, see the .service file's comment)
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "/etc/systemd/system/{{ item.dest }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop:
+    - { src: otel-collector-refresh.service.j2, dest: otel-collector-refresh.service }
+    - { src: otel-collector-refresh.timer, dest: otel-collector-refresh.timer }
+  register: otel_collector_refresh_units
+
+- name: Reload systemd if the otel-collector refresh units changed
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when: otel_collector_refresh_units.changed
+
+- name: Enable and start the otel-collector docker_stats refresh timer
+  ansible.builtin.systemd:
+    name: otel-collector-refresh.timer
+    enabled: true
+    state: started
