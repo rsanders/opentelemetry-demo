@@ -11,6 +11,25 @@ services:
       dockerfile: deploy/aws/Dockerfile.ad
       args:
         AD_BASE_IMAGE: ${IMAGE_NAME}:${DEMO_VERSION}-ad
+    deploy:
+      resources:
+        limits:
+          memory: 450M
+  load-generator:
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+  payment:
+    deploy:
+      resources:
+        limits:
+          memory: 210M
+  product-catalog:
+    deploy:
+      resources:
+        limits:
+          memory: 30M
   otel-collector:
     # Docker's logging driver runs in the host daemon, outside the Compose
     # network, so it cannot reach the collector by service name. Publish the
