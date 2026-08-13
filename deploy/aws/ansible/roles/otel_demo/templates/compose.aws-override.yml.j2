@@ -24,7 +24,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 210M
+          # Sized from a local load test at ~3.7k req/s: RSS ramped from a
+          # ~190M idle baseline to a 330-444M plateau with no further growth.
+          memory: 512M
   product-catalog:
     deploy:
       resources:
