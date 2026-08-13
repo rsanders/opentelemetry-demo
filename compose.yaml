@@ -480,6 +480,15 @@ services:
       - OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
       - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
       - OTEL_RESOURCE_ATTRIBUTES=${OTEL_RESOURCE_ATTRIBUTES_BASE},service.version=${OTEL_SERVICE_VERSION},service.criticality=critical
+      # pino-opentelemetry-transport (logger.js) runs its own resource
+      # detection in a separate worker thread, with a hardcoded default
+      # detector order that puts serviceinstance *after* env -- so it always
+      # wins with a fresh random UUID, ignoring OTEL_RESOURCE_ATTRIBUTES'
+      # service.instance.id. This overrides that order (env last, so it
+      # wins) to match the main SDK's own detector order. Also read by the
+      # main @opentelemetry/auto-instrumentations-node SDK, where it's a
+      # no-op vs. its 'all' default since env already ran last there.
+      - OTEL_NODE_RESOURCE_DETECTORS=host,os,process,serviceinstance,env
       - OTEL_SERVICE_NAME=payment
     healthcheck:
       test:

@@ -4,6 +4,12 @@ fast_update: false
 compose_environment:
   HOME: /home/ec2-user
   OTEL_SERVICE_VERSION: "{{ otel_service_version }}"
+  # Stamped into every service's service.instance.id (see .env's
+  # OTEL_RESOURCE_ATTRIBUTES_BASE) so telemetry can tell one deploy's run of
+  # a service apart from the next. ansible_date_time is gathered once by
+  # site.yml's pre_tasks, so every service in this deploy gets the same
+  # value -- that's fine, service.name already makes the pair unique.
+  DEPLOY_INSTANCE_ID: "{{ ansible_facts['date_time']['epoch'] }}"
 
 # These services wrap a pulled public image with a small deployment-specific
 # layer. Build them after pulling so their Dockerfiles can use that image as a
