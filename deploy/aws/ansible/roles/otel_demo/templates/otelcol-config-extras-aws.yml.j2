@@ -400,7 +400,7 @@ service:
       # connector, so demo.metric_datapoint.count's own data points don't
       # loop back into the connector that produced them.
       receivers: [docker_stats, http_check/frontend-proxy, host_metrics, nginx, otlp, redis, postgresql, prometheus/ad, prometheus/envoy, prometheus/flagd, span_metrics, count/frontend_proxy_http, count, signal_to_metrics/cloudwatch_partial_success]
-      processors: [resourcedetection, memory_limiter, resource/aws_log_correlation, resource/aws_application, resource/aws_deployment, resource/sanitize_cloudwatch_metrics, transform/sanitize_cloudwatch_metric_resources, filter/cloudwatch_metrics, metric_start_time, groupbyattrs, batch/metrics]
+      processors: [resourcedetection, transform/docker_stats_service_name, memory_limiter, resource/aws_log_correlation, resource/aws_application, resource/aws_deployment, resource/sanitize_cloudwatch_metrics, transform/sanitize_cloudwatch_metric_resources, filter/cloudwatch_metrics, metric_start_time, groupbyattrs, batch/metrics]
       # debug dropped, same reasoning as the traces pipeline above.
       exporters: [otlphttp/metrics]
     # Exists only to feed demo.metric_datapoint.count without the metrics

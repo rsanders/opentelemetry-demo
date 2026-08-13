@@ -204,6 +204,21 @@ processors:
           enabled: true
         os.type:
           enabled: true
+  # docker_stats has no notion of "service" -- it builds one resource per
+  # container with container.* attributes only, never service.name. Anything
+  # downstream that groups/labels by service.name (dashboards, Application
+  # Signals correlation, a future Prometheus consumer's job/instance labels)
+  # would otherwise see these resources with no service name at all.
+  # container.name is always present on a docker_stats resource, so it's a
+  # reasonable fallback; only sets it when absent, so it never touches
+  # OTLP-received app metrics that already carry their own service.name.
+  transform/docker_stats_service_name:
+    error_mode: ignore
+    metric_statements:
+      - context: resource
+        statements:
+          - set(attributes["service.name"], attributes["container.name"]) where attributes["service.name"] == nil and attributes["container.name"] != nil
+
   filter/sanitize_profiles:
     error_mode: ignore
     profiles:
@@ -324,7 +339,7 @@ service:
       exporters: [debug, span_metrics]
     metrics:
       receivers: [docker_stats, http_check/frontend-proxy, host_metrics, nginx, otlp, redis, postgresql, prometheus/ad, prometheus/envoy, prometheus/flagd, span_metrics, count/frontend_proxy_http]
-      processors: [resourcedetection, memory_limiter]
+      processors: [resourcedetection, transform/docker_stats_service_name, memory_limiter]
       exporters: [debug]
     logs:
       receivers: [otlp]
