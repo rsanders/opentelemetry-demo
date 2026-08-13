@@ -6,6 +6,7 @@
 
 repo_dest: /opt/otel-demo
 docker_compose_plugin_version: "v2.39.4"
+otel_service_version: "{{ lookup('ansible.builtin.env', 'OTEL_SERVICE_VERSION') }}"
 
 compose_file_flags:
   core: "-f compose.yaml"

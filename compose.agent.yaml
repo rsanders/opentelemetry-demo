@@ -45,7 +45,7 @@ services:
       - OPENAI_API_KEY=${API_KEY}
       - APPLICATION_ENDPOINT
       - OTEL_EXPORTER_OTLP_INSECURE=true
-      - OTEL_RESOURCE_ATTRIBUTES=${OTEL_RESOURCE_ATTRIBUTES},service.criticality=low
+      - OTEL_RESOURCE_ATTRIBUTES=${OTEL_RESOURCE_ATTRIBUTES_BASE},service.version=${OTEL_SERVICE_VERSION},service.criticality=low
       - OTEL_SERVICE_NAME=agent
     depends_on:
       otel-collector:
@@ -80,7 +80,7 @@ services:
       - MCP_PORT
       - OTEL_EXPORTER_OTLP_INSECURE=true
       - APPLICATION_ENDPOINT
-      - OTEL_RESOURCE_ATTRIBUTES=${OTEL_RESOURCE_ATTRIBUTES},service.criticality=low
+      - OTEL_RESOURCE_ATTRIBUTES=${OTEL_RESOURCE_ATTRIBUTES_BASE},service.version=${OTEL_SERVICE_VERSION},service.criticality=low
       - OTEL_SERVICE_NAME=mcp
     depends_on:
       frontend:
@@ -112,7 +112,7 @@ services:
       - AGENT_ENDPOINT
       - CHATBOT_PORT
       - CHATBOT_ROOT_PATH
-      - OTEL_RESOURCE_ATTRIBUTES=${OTEL_RESOURCE_ATTRIBUTES},service.criticality=low
+      - OTEL_RESOURCE_ATTRIBUTES=${OTEL_RESOURCE_ATTRIBUTES_BASE},service.version=${OTEL_SERVICE_VERSION},service.criticality=low
       - OTEL_SERVICE_NAME=chatbot
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://${OTEL_COLLECTOR_HOST}:${OTEL_COLLECTOR_PORT_HTTP}
       - OTEL_EXPORTER_OTLP_INSECURE=true

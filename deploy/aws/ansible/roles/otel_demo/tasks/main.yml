@@ -1,4 +1,11 @@
 ---
+- name: Validate the deployment service version
+  ansible.builtin.assert:
+    that: otel_service_version is match('^[0-9a-f]{40}-[0-9]+$')
+    fail_msg: >-
+      otel_service_version must be the full Git SHA followed by the
+      deployment start Unix timestamp
+
 - name: Ensure repo destination directory exists
   ansible.builtin.file:
     path: "{{ repo_dest }}"
@@ -42,8 +49,7 @@
   args:
     chdir: "{{ repo_dest }}"
   become_user: ec2-user
-  environment:
-    HOME: /home/ec2-user
+  environment: "{{ compose_environment }}"
 
 - name: Build deployment-local image extensions
   # The public ad image lacks grpc_health_probe. Its AWS-only Dockerfile uses
@@ -55,8 +61,7 @@
   args:
     chdir: "{{ repo_dest }}"
   become_user: ec2-user
-  environment:
-    HOME: /home/ec2-user
+  environment: "{{ compose_environment }}"
   when: locally_extended_services | length > 0
 
 - name: Start the demo stack
@@ -74,8 +79,7 @@
   args:
     chdir: "{{ repo_dest }}"
   become_user: ec2-user
-  environment:
-    HOME: /home/ec2-user
+  environment: "{{ compose_environment }}"
 
 - name: Force-recreate services whose bind-mounted config content Compose can't diff
   ansible.builtin.shell: >-
@@ -84,6 +88,5 @@
   args:
     chdir: "{{ repo_dest }}"
   become_user: ec2-user
-  environment:
-    HOME: /home/ec2-user
+  environment: "{{ compose_environment }}"
   when: fast_update

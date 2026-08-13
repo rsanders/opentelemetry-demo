@@ -49,15 +49,21 @@ class CallbackModule(CallbackBase):
         if self._started:
             return
 
-        variables = self._deployment_variables(play)
-        if not variables:
+        context = self._deployment_context(play)
+        if not context:
             self._display.warning(
                 "Deployment event not emitted: app_log_group and aws_region "
                 "must be defined in the Ansible inventory"
             )
             return
 
+        variables = context
         self._metadata.update(variables)
+        self._metadata["started_unix"] = int(time.time())
+        self._metadata["service_version"] = (
+            f"{self._metadata['revision']}-{self._metadata['started_unix']}"
+        )
+        os.environ["OTEL_SERVICE_VERSION"] = self._metadata["service_version"]
         self._started = True
         self._emit("started")
 
@@ -71,7 +77,7 @@ class CallbackModule(CallbackBase):
         )
         self._emit("failed" if failed else "succeeded")
 
-    def _deployment_variables(self, play):
+    def _deployment_context(self, play):
         variable_manager = play.get_variable_manager()
         hosts = variable_manager._inventory.get_hosts(pattern=play.hosts)
         if not hosts:
@@ -135,7 +141,13 @@ class CallbackModule(CallbackBase):
             }
 
     def _emit(self, state):
-        timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        if state == "started":
+            timestamp = datetime.fromtimestamp(
+                self._metadata["started_unix"], timezone.utc
+            )
+        else:
+            timestamp = datetime.now(timezone.utc)
+        timestamp = timestamp.isoformat().replace("+00:00", "Z")
         failed = state == "failed"
         event = {
             "timestamp": timestamp,
@@ -149,6 +161,7 @@ class CallbackModule(CallbackBase):
             "cicd.pipeline.run.id": self._deployment_id,
             "service.name": "ansible",
             "service.namespace": self._metadata["project_name"],
+            "service.version": self._metadata["service_version"],
             "vcs.repository.name": self._metadata["repo_name"],
             "vcs.repository.url.full": self._metadata["repo_url"],
             "vcs.ref.head.name": self._metadata["branch"],

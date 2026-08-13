@@ -1,6 +1,10 @@
 ---
 fast_update: false
 
+compose_environment:
+  HOME: /home/ec2-user
+  OTEL_SERVICE_VERSION: "{{ otel_service_version }}"
+
 # These services wrap a pulled public image with a small deployment-specific
 # layer. Build them after pulling so their Dockerfiles can use that image as a
 # base without rebuilding the application from source.

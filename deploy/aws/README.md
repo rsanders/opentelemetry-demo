@@ -151,6 +151,12 @@ whether the local worktree was dirty. Delivery uses CloudWatch Logs directly
 and is best-effort so a missing collector or logging outage cannot hide or
 change the deployment result.
 
+At the same instant the start event is emitted, Ansible sets every service's
+OpenTelemetry `service.version` resource attribute to `<git-sha>-<unix-time>`,
+using the full Git revision and the deployment start time in Unix seconds. The
+value is independent of `IMAGE_VERSION`, so deployment correlation does not
+change the container image tags Compose pulls.
+
 Ansible's first task waits for SSH to actually accept connections
 (`wait_for_connection`) and for cloud-init to finish before doing anything
 else — `terraform apply` returns as soon as AWS reports the instance

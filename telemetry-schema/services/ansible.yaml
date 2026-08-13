@@ -15,6 +15,7 @@ attribute_groups:
       - ref: deployment.status
       - ref: service.name
       - ref: service.namespace
+      - ref: service.version
       - ref: user.name
       - ref: vcs.ref.head.name
       - ref: vcs.ref.head.revision

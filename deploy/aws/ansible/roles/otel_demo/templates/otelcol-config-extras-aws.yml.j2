@@ -96,6 +96,11 @@ processors:
       - key: service.namespace
         value: '{{ project_name }}'
         action: upsert
+  resource/aws_deployment:
+    attributes:
+      - key: service.version
+        value: '{{ otel_service_version }}'
+        action: upsert
   resource/flagd_logs:
     attributes:
       - key: service.name
@@ -379,7 +384,7 @@ service:
       level: detailed
   pipelines:
     traces:
-      processors: [resourcedetection, memory_limiter, resource/aws_log_correlation, resource/aws_application, transform/sanitize_spans, gen_ai_normalizer, groupbyattrs, batch/traces]
+      processors: [resourcedetection, memory_limiter, resource/aws_log_correlation, resource/aws_application, resource/aws_deployment, transform/sanitize_spans, gen_ai_normalizer, groupbyattrs, batch/traces]
       # debug dropped from the base list: it prints every span to the
       # collector's own stdout, which is unnecessary volume once spans are
       # actually landing in X-Ray via otlphttp/traces below. count added so
@@ -395,7 +400,7 @@ service:
       # connector, so demo.metric_datapoint.count's own data points don't
       # loop back into the connector that produced them.
       receivers: [docker_stats, http_check/frontend-proxy, host_metrics, nginx, otlp, redis, postgresql, prometheus/ad, prometheus/envoy, prometheus/flagd, span_metrics, count/frontend_proxy_http, count, signal_to_metrics/cloudwatch_partial_success]
-      processors: [resourcedetection, memory_limiter, resource/aws_log_correlation, resource/aws_application, resource/sanitize_cloudwatch_metrics, transform/sanitize_cloudwatch_metric_resources, filter/cloudwatch_metrics, metric_start_time, groupbyattrs, batch/metrics]
+      processors: [resourcedetection, memory_limiter, resource/aws_log_correlation, resource/aws_application, resource/aws_deployment, resource/sanitize_cloudwatch_metrics, transform/sanitize_cloudwatch_metric_resources, filter/cloudwatch_metrics, metric_start_time, groupbyattrs, batch/metrics]
       # debug dropped, same reasoning as the traces pipeline above.
       exporters: [otlphttp/metrics]
     # Exists only to feed demo.metric_datapoint.count without the metrics
@@ -408,7 +413,7 @@ service:
     # irrelevant to a pipeline whose only exporter is an in-process connector.
     metrics/count_tap:
       receivers: [docker_stats, http_check/frontend-proxy, host_metrics, nginx, otlp, redis, postgresql, prometheus/ad, prometheus/envoy, prometheus/flagd, span_metrics, count/frontend_proxy_http]
-      processors: [resourcedetection, memory_limiter, resource/aws_application]
+      processors: [resourcedetection, memory_limiter, resource/aws_application, resource/aws_deployment]
       exporters: [count]
     logs:
       # processors repeats the base list (resourcedetection, memory_limiter,
@@ -416,7 +421,7 @@ service:
       # here -- adding resource/aws_application/groupbyattrs/batch/logs means
       # the array as a whole must be replaced, per the deep-merge note at the
       # top of this file.
-      processors: [resourcedetection, memory_limiter, transform/sanitize_logs, resource/aws_application, groupbyattrs, batch/logs]
+      processors: [resourcedetection, memory_limiter, transform/sanitize_logs, resource/aws_application, resource/aws_deployment, groupbyattrs, batch/logs]
       # debug dropped, same reasoning as the traces pipeline above. count
       # added so every log record is tallied into demo.log_record.count.
       exporters: [routing/cloudwatch_logs, count/frontend_proxy_http, count, signal_to_metrics/cloudwatch_partial_success]
@@ -425,7 +430,7 @@ service:
     # same sanitization, batching, routing, and OTLP exporter path as SDK logs.
     logs/flagd-stdout:
       receivers: [fluent_forward/flagd]
-      processors: [memory_limiter, transform/sanitize_logs, resource/flagd_logs, resource/aws_application, groupbyattrs, batch/logs]
+      processors: [memory_limiter, transform/sanitize_logs, resource/flagd_logs, resource/aws_application, resource/aws_deployment, groupbyattrs, batch/logs]
       exporters: [routing/cloudwatch_logs, count]
 {% for svc in log_stream_services %}
     logs/{{ svc }}:
