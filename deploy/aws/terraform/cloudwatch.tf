@@ -21,7 +21,9 @@ resource "aws_cloudwatch_log_group" "app" {
 # template (and with its hand-expanded copy in the sibling
 # deploy/aws-ecs/cdk/files/otelcol-config-extras-aws.yml) -- a service
 # missing from here will hit the same "stream does not exist" error and get
-# its logs dropped, even though it has a route to the right exporter.
+# its logs dropped, even though it has a route to the right exporter. The
+# additional ansible stream below is written by the controller callback, not
+# the collector; other remains the collector's catch-all stream.
 locals {
   log_stream_services = [
     "ad", "cart", "checkout", "currency", "email", "frontend", "frontend-proxy",
@@ -31,7 +33,7 @@ locals {
 }
 
 resource "aws_cloudwatch_log_stream" "app" {
-  for_each       = toset(concat(local.log_stream_services, ["other"]))
+  for_each       = toset(concat(local.log_stream_services, ["ansible", "other"]))
   name           = each.value
   log_group_name = aws_cloudwatch_log_group.app.name
 }

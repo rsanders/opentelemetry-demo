@@ -1,0 +1,25 @@
+# Copyright The OpenTelemetry Authors
+# SPDX-License-Identifier: Apache-2.0
+
+file_format: definition/2
+attribute_groups:
+  - id: service.ansible
+    visibility: public
+    brief: Ansible deployment event attributes
+    stability: development
+    attributes:
+      - ref: cicd.pipeline.name
+      - ref: cicd.pipeline.run.id
+      - ref: deployment.id
+      - ref: deployment.name
+      - ref: deployment.status
+      - ref: service.name
+      - ref: service.namespace
+      - ref: user.name
+      - ref: vcs.ref.head.name
+      - ref: vcs.ref.head.revision
+      - ref: vcs.ref.type
+      - ref: vcs.repository.name
+      - ref: vcs.repository.url.full
+      - ref: demo.deployment.commit.author.name
+      - ref: demo.deployment.repository.dirty

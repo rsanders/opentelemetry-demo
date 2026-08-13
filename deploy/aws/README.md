@@ -142,6 +142,15 @@ start the stack. First run takes a few minutes (instance boot + image
 pulls). `up`/`update` apply non-interactively (`-auto-approve`); run `make
 plan` first if you want to review changes before applying.
 
+The Ansible controller writes a structured lifecycle event to the `ansible`
+stream in `/otel-demo/logs` when a deployment starts, succeeds, or fails. The
+JSON follows the OpenTelemetry log data model and CI/CD, deployment, VCS, and
+user semantic conventions. Each run has one `deployment.id`; its events also
+record the repository, branch, Git revision, last commit author, deployer, and
+whether the local worktree was dirty. Delivery uses CloudWatch Logs directly
+and is best-effort so a missing collector or logging outage cannot hide or
+change the deployment result.
+
 Ansible's first task waits for SSH to actually accept connections
 (`wait_for_connection`) and for cloud-init to finish before doing anything
 else — `terraform apply` returns as soon as AWS reports the instance

@@ -1,0 +1,14 @@
+# Copyright The OpenTelemetry Authors
+# SPDX-License-Identifier: Apache-2.0
+
+file_format: definition/2
+attributes:
+  - key: demo.deployment.commit.author.name
+    type: string
+    brief: Name of the author of the commit being deployed
+    stability: development
+    examples: ["Alex Doe"]
+  - key: demo.deployment.repository.dirty
+    type: boolean
+    brief: Whether the deployed repository contains uncommitted changes
+    stability: development
