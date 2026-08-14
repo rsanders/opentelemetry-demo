@@ -45,6 +45,187 @@ and forwards everything the `otel-collector` service sees into CloudWatch:
 This is intentionally a single-instance, no-HA setup: it's meant for demoing
 the telemetry pipeline, not for production traffic.
 
+## Deployed architecture
+
+The default `core` profile runs every component below in Docker on one EC2
+instance. `full` additionally runs accounting, fraud-detection, and Kafka.
+The in-Docker `otel-collector` aggregates application, Docker, and collector
+scrape telemetry. The host CloudWatch agent intentionally bypasses it: it
+collects host metrics and sends them directly to CloudWatch's OTLP endpoint.
+Docker does **not** forward every container's stdout; `flagd` is the one
+explicit stdout bridge.
+
+```mermaid
+flowchart LR
+  Browser[Browser] -->|HTTP :80| Proxy
+  LoadGen[load-generator] -->|HTTP :80| Proxy
+
+  subgraph EC2["EC2 instance / Docker Compose"]
+    Proxy[frontend-proxy / Envoy]
+    AD[ad]
+    Cart[cart]
+    Checkout[checkout]
+    Currency[currency]
+    Email[email]
+    Frontend[frontend]
+    Image[image-provider]
+    Payment[payment]
+    Catalog[product-catalog]
+    Quote[quote]
+    Reco[recommendation]
+    Shipping[shipping]
+    Flagd[flagd]
+    FlagdUI[flagd-ui]
+    Docs[telemetry-docs]
+    PG[astronomy-db / PostgreSQL]
+    Valkey[valkey-cart]
+    Accounting[accounting - full only]
+    Fraud[fraud-detection - full only]
+    Kafka[Kafka - full only]
+    Docker[Docker daemon]
+    Health[otel-demo-health systemd timer]
+    Collector[otel-collector]
+    CWAgent[Amazon CloudWatch agent]
+  end
+
+  Proxy -->|HTTP| Frontend
+  Frontend -->|gRPC| AD & Cart & Checkout & Currency & Catalog & Reco & Shipping
+  Checkout -->|gRPC| Cart & Currency & Email & Payment & Catalog & Shipping
+  Cart -->|Redis| Valkey
+  Catalog -->|PostgreSQL| PG
+  Reco -->|gRPC| Catalog
+  Shipping -->|gRPC| Quote
+  Checkout -->|Kafka| Kafka
+  Kafka -->|Kafka| Accounting & Fraud
+  AD & Cart & Checkout & Email & Frontend & Payment & Catalog & Reco & Shipping & Fraud -->|OpenFeature / flagd RPC| Flagd
+  FlagdUI -->|flagd API| Flagd
+
+  AD & Cart & Checkout & Currency & Email & Frontend & Image & LoadGen & Payment & Catalog & Quote & Reco & Shipping & FlagdUI & Docs -->|OTLP gRPC or HTTP/protobuf| Collector
+  Proxy -->|OTLP/gRPC traces + OTLP logs| Collector
+  Flagd -->|OTLP/HTTP traces| Collector
+  Flagd -->|Prometheus scrape metrics| Collector
+  Accounting & Fraud & Kafka -->|OTLP/HTTP telemetry| Collector
+  PG -.->|PostgreSQL receiver| Collector
+  Valkey -.->|Redis receiver| Collector
+  Docker -->|Fluent Forward :8006; flagd stdout only| Collector
+  Health -->|OTLP/HTTP :4318 health gauges| Collector
+
+  Collector -->|OTLP/HTTP + SigV4| Zeus[Zeus / CloudWatch OTel metrics store]
+  Collector -->|OTLP/HTTP + SigV4| Logs[CloudWatch Logs]
+  Collector -->|OTLP/HTTP + SigV4| Traces[Transaction Search / CW Logs trace destination]
+  CWAgent -->|OTLP/HTTP + SigV4| Zeus
+```
+
+### Collector export path
+
+```mermaid
+flowchart LR
+  Collector[otel-collector]
+  MetricsEndpoint["monitoring.<region>.amazonaws.com/v1/metrics"]
+  LogsEndpoint["logs.<region>.amazonaws.com/v1/logs"]
+  TracesEndpoint["xray.<region>.amazonaws.com/v1/traces"]
+  Zeus[Zeus / CloudWatch OTel metrics store]
+  Logs["CloudWatch Logs\n/otel-demo/logs and /otel-demo/otelcol"]
+  TransactionSearch["Transaction Search\nCloudWatch Logs trace-segment destination"]
+
+  Collector -->|OTLP/HTTP + SigV4 service: monitoring| MetricsEndpoint
+  Collector -->|OTLP/HTTP + SigV4 service: logs| LogsEndpoint
+  Collector -->|OTLP/HTTP + SigV4 service: xray| TracesEndpoint
+  MetricsEndpoint --> Zeus
+  LogsEndpoint --> Logs
+  TracesEndpoint --> TransactionSearch
+```
+
+### Single-host container inventory
+
+```mermaid
+flowchart TB
+  Customer[Customer browser]
+
+  subgraph EC2["One EC2 host"]
+    subgraph Docker["Docker Compose"]
+      subgraph Row1["Core containers: row 1"]
+        direction LR
+        Proxy[frontend-proxy / Envoy]
+        AD[ad]
+        Cart[cart]
+        Checkout[checkout]
+      end
+      subgraph Row2["Core containers: row 2"]
+        direction LR
+        Currency[currency]
+        Email[email]
+        Frontend[frontend]
+        Image[image-provider]
+      end
+      subgraph Row3["Core containers: row 3"]
+        direction LR
+        LoadGen[load-generator]
+        Payment[payment]
+        Catalog[product-catalog]
+        Quote[quote]
+      end
+      subgraph Row4["Core containers: row 4"]
+        direction LR
+        Reco[recommendation]
+        Shipping[shipping]
+        Flagd[flagd]
+        FlagdUI[flagd-ui]
+      end
+      subgraph Row5["Core containers: row 5"]
+        direction LR
+        Docs[telemetry-docs]
+        PG[astronomy-db / PostgreSQL]
+        Valkey[valkey-cart]
+        Collector[otel-collector]
+      end
+      subgraph Full["Optional full-profile containers"]
+        direction LR
+        Accounting[accounting]
+        Fraud[fraud-detection]
+        Kafka[Kafka]
+      end
+    end
+  end
+
+  Customer -->|Inbound HTTP :80| Proxy
+```
+
+`Zeus` denotes the CloudWatch OpenTelemetry metrics store (PromQL in Query
+Studio), not a classic CloudWatch metric namespace. Transaction Search must be
+enabled account-wide for the OTLP traces endpoint. AWS requests use the EC2
+instance role through the collector or CloudWatch agent's default credential
+chain.
+
+| Component | Purpose, protocols, and interactions | Telemetry connection and native SDK/library/protocol |
+| --- | --- | --- |
+| `frontend-proxy` | Envoy public HTTP edge; routes browser and load-generator traffic to frontend, image provider, flagd UI, and telemetry docs. | Envoy OpenTelemetry tracer sends OTLP/gRPC traces; OTel access logger sends OTLP logs. Collector Prometheus-scrapes Envoy stats. |
+| `frontend` | Next.js storefront; browser HTTP and server-side gRPC calls to ad, cart, checkout, currency, catalog, recommendation, shipping; uses image provider and flagd. | Node `@opentelemetry/sdk-node` auto-instrumentation uses OTLP/gRPC. Browser `@opentelemetry/sdk-trace-web` uses OTLP/HTTP through proxy `/otlp-http`. |
+| `ad` | Contextual ad gRPC service for frontend; uses flagd; exposes Prometheus metrics. | Java agent/SDK exports OTLP/HTTP traces, metrics, and logs; collector also scrapes `/metrics`. |
+| `cart` | gRPC cart API used by frontend/checkout; persists to Valkey; uses flagd. | .NET SDK: ASP.NET Core, gRPC client, HTTP, runtime, and StackExchange.Redis instrumentation; OTLP/gRPC. |
+| `checkout` | gRPC checkout orchestrator for frontend; calls cart, currency, email, payment, catalog, shipping, flagd; produces Kafka events in `full`. | Go SDK with `otelgrpc`, `otelhttp`, `otelslog`, and OTLP HTTP log/metric/trace exporters; OTLP/HTTP protobuf. |
+| `currency` | Currency conversion gRPC service for frontend and checkout. | C++ OpenTelemetry SDK and gRPC instrumentation; configured OTLP/gRPC default endpoint. |
+| `email` | gRPC order-confirmation sender used by checkout; uses flagd. | Ruby SDK, `opentelemetry-instrumentation-all`, and OTLP trace/metric/log exporters; OTLP/HTTP. |
+| `image-provider` | NGINX HTTP image server for the proxy/browser. | NGINX OpenTelemetry module sends OTLP/gRPC traces; collector NGINX receiver polls `/status`. |
+| `load-generator` | k6 browser/load client against the public proxy; uses flagd. | `xk6-otel` sends traces and built-in metrics by OTLP/HTTP protobuf. |
+| `payment` | gRPC payment-charge API called by checkout; uses flagd. | Node auto-instrumentation with OTLP/gRPC trace/metric exporters; `pino-opentelemetry-transport` sends logs by OTLP/gRPC. |
+| `product-catalog` | gRPC product API used by frontend/checkout/recommendation; reads PostgreSQL and uses flagd. | Go SDK, `otelgrpc`, `otelslog`, runtime instrumentation, and `otelsql`; configured OTLP exporter/default endpoint. |
+| `quote` | gRPC quote API called by shipping. | PHP SDK/auto instrumentation, OTLP exporter, and Monolog OTel logger; OTLP/HTTP. |
+| `recommendation` | gRPC recommendations service used by frontend; calls catalog and uses flagd. | Python OTel SDK/distro and OTLP gRPC trace/metric/log exporter. |
+| `shipping` | gRPC shipping API used by frontend/checkout; calls quote and uses flagd. | Rust `opentelemetry`, `opentelemetry-otlp`, Actix/AWC instrumentation, and tracing appender; OTLP/HTTP protobuf. |
+| `flagd` | OpenFeature evaluator: flagd/OFREP APIs plus management HTTP; serves all flag-enabled apps and flagd UI. | OTLP/HTTP traces; Prometheus metrics scraped by collector. No OTLP log exporter: Docker forwards stdout by Fluent Forward. |
+| `flagd-ui` | Phoenix HTTP UI for flag definitions; interacts with flagd and proxy/browser. | Elixir `opentelemetry_exporter`, Phoenix, and Bandit instrumentation; OTLP/gRPC. |
+| `telemetry-docs` | NGINX HTTP site serving telemetry-schema documentation to proxy/browser. | NGINX OpenTelemetry module sends OTLP/gRPC traces. |
+| `astronomy-db` | PostgreSQL product catalog database. | No native exporter or stdout forwarding. Collector `postgresql` receiver polls database metrics. |
+| `valkey-cart` | Valkey/Redis database for cart. | No native exporter or stdout forwarding. Collector `redis` receiver polls database metrics. |
+| `accounting` (`full`) | .NET Kafka order-event consumer and accounting writer. | OpenTelemetry .NET SDK/auto instrumentation sends to the configured OTLP endpoint. |
+| `fraud-detection` (`full`) | Java Kafka order-event consumer and flag evaluator. | OpenTelemetry Java agent/SDK exports OTLP/HTTP telemetry. |
+| `kafka` (`full`) | Kafka broker for checkout, accounting, and fraud detection. | Java agent exports OTLP/HTTP telemetry; collector `kafkametrics` receiver adds broker metrics. |
+| `otel-collector` | In-Docker receiver, scraper, processor, router, and AWS exporter. Receives OTLP/gRPC :4317, OTLP/HTTP :4318, and Fluent Forward :8006; scrapes Docker, hostfs, Envoy, ad, flagd, PostgreSQL, and Valkey. | Self-metrics/logs loop back by OTLP/HTTP. Exports all signals through `otlphttp` plus `sigv4auth`: metrics to `monitoring`, logs to `logs`, traces to `xray`. |
+| Docker daemon | Runs Compose containers and logging drivers. | `flagd` uses the `fluentd` driver to send stdout to collector Fluent Forward. Other containers use `json-file`; raw stdout remains on host. Collector `docker_stats` reads Docker API metrics. |
+| `otel-demo-health` | Host systemd timer and Python Docker health/restart checker. | Stdlib Python sends `deploy.service_up` and `deploy.service_restart_count` as OTLP/HTTP JSON to collector :4318; no direct AWS API. |
+| Amazon CloudWatch agent | Host CPU, memory, disk, filesystem, load, network, and paging metrics. | OTel-native `hostmetrics` receiver exports **directly** by OTLP/HTTP plus SigV4 to CloudWatch metrics; it does not use the in-Docker collector. |
+
 Terraform provisions the AWS resources (VPC, EC2 instance, an Elastic IP for
 a stable public address, security group, IAM role, CloudWatch log groups);
 Ansible installs Docker on the instance and runs `docker compose up -d`
