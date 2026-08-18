@@ -11,6 +11,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -57,19 +58,23 @@ func initProviders() {
 			res = resource.Default()
 		}
 
-		traceExp, err := otlptracehttp.New(ctx)
-		if err != nil {
-			providerErr = fmt.Errorf("xk6-otel: creating OTLP trace exporter: %w", err)
-			return
+		if strings.EqualFold(os.Getenv("K6_OTEL_TRACES_ENABLED"), "false") {
+			globalTracer = trace.NewNoopTracerProvider().Tracer("load-generator")
+		} else {
+			traceExp, err := otlptracehttp.New(ctx)
+			if err != nil {
+				providerErr = fmt.Errorf("xk6-otel: creating OTLP trace exporter: %w", err)
+				return
+			}
+			tp := sdktrace.NewTracerProvider(
+				sdktrace.WithBatcher(traceExp),
+				sdktrace.WithResource(res),
+				sdktrace.WithSampler(sdktrace.AlwaysSample()),
+			)
+			globalTracer = tp.Tracer("load-generator")
 		}
-		tp := sdktrace.NewTracerProvider(
-			sdktrace.WithBatcher(traceExp),
-			sdktrace.WithResource(res),
-			sdktrace.WithSampler(sdktrace.AlwaysSample()),
-		)
-		globalTracer = tp.Tracer("load-generator")
 
-		// Log provider — non-fatal if unavailable so traces still work.
+		// Log provider — non-fatal if unavailable.
 		if logExp, lerr := otlploghttp.New(ctx); lerr != nil {
 			fmt.Fprintf(os.Stderr, "xk6-otel: warning: OTLP log exporter unavailable: %v\n", lerr)
 		} else {
@@ -80,7 +85,7 @@ func initProviders() {
 			globalLogger = lp.Logger("load-generator")
 		}
 
-		// Metric provider — non-fatal if unavailable so traces still work.
+		// Metric provider — non-fatal if unavailable.
 		if metricExp, merr := otlpmetrichttp.New(ctx); merr != nil {
 			fmt.Fprintf(os.Stderr, "xk6-otel: warning: OTLP metric exporter unavailable: %v\n", merr)
 		} else {

@@ -479,6 +479,8 @@ export function buildCatalog(ctx: CatalogContext): ServiceSpec[] {
             K6_OTEL_EXPORTER_PROTOCOL: 'http/protobuf',
             K6_OTEL_HTTP_EXPORTER_ENDPOINT: `${collectorHost}:${httpPort}`,
             K6_OTEL_HTTP_EXPORTER_INSECURE: 'true',
+            K6_OTEL_TRACES_ENABLED: 'false',
+            K6_LOG_LEVEL: 'warn',
             K6_BROWSER_ENABLED: 'true',
             K6_BROWSER_ARGS: 'no-sandbox,disable-dev-shm-usage',
             K6_OTEL_METRIC_PREFIX: 'k6.',

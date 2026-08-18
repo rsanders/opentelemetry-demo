@@ -21,6 +21,11 @@ enabled in [`entrypoint.sh`](./entrypoint.sh)'s `k6 run` invocation; the OTLP
 endpoint and protocol for that output are configured via the `K6_OTEL_*` env
 vars in `compose.yaml`.
 
+Set `K6_OTEL_TRACES_ENABLED=false` to keep the extension's OTel metrics and
+logs while using a no-op tracer that does not send load-generator spans to the
+collector. The AWS, AWS ECS, and Azure deployment configurations set this
+value and `K6_LOG_LEVEL=warn` by default.
+
 ## Traffic mix
 
 Each `httpScenario` iteration picks one task at random, weighted so browsing

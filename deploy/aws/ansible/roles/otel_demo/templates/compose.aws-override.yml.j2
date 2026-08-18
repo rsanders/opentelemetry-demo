@@ -16,6 +16,9 @@ services:
         limits:
           memory: 450M
   load-generator:
+    environment:
+      - K6_OTEL_TRACES_ENABLED=false
+      - K6_LOG_LEVEL=warn
     deploy:
       resources:
         limits:
