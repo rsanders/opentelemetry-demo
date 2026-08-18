@@ -1,0 +1,22 @@
+{
+  "otel-collector": "c8b4fb01-d78f-5489-8d61-d607e2277ccb",
+  "flagd": "51da1ef8-271a-5e62-849f-9278298bb2e0",
+  "astronomy-db": "43fad3e9-ba76-55ec-9b41-7f5bc1edc872",
+  "product-catalog": "fa4addab-621b-5395-9483-eb010cace30e",
+  "shipping": "bbe50588-7168-531c-88d9-434eac87a77a",
+  "valkey-cart": "0abb2a91-3e43-5312-b5a4-44f9351981ce",
+  "cart": "bed4788a-fd00-54f1-94f3-6e141866014e",
+  "currency": "7b0ef95e-96c8-5a4b-9fcd-3154c9e33117",
+  "email": "3a7d0600-3e25-5f92-a774-fa99d9460610",
+  "payment": "7690f0bd-2c8c-57b9-9f3f-bde9cac13f0c",
+  "checkout": "6876eac6-d046-518a-81b8-80abe0e1d04e",
+  "ad": "e38e50ae-97b6-550f-a778-272d2d0e4b8e",
+  "quote": "fc82b402-46fd-56a3-aede-d0f0e57a3972",
+  "recommendation": "dc0a51e2-128e-5521-8bc8-aff7936669e8",
+  "image-provider": "3dab3e9b-dc04-56df-afc6-2e27c4c5f7ba",
+  "frontend": "ff8f8a57-a8af-5f15-9646-e99db502bb1f",
+  "flagd-ui": "a8a76eb3-a626-5740-bf54-70ee33ab0fc0",
+  "telemetry-docs": "170d4dfa-84ba-547f-bb15-7ab91787cdf9",
+  "frontend-proxy": "fa87f9e8-2005-5794-8a55-e2f0554c0f96",
+  "load-generator": "b25a269a-fc4f-5d81-b4cb-3f82c7e3ec3a"
+}

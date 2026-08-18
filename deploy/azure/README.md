@@ -71,11 +71,19 @@ the next Terraform apply will restore their definitions.
 | Traces | [Azure OpenTelemetry Demo - Traces](https://portal.azure.com/#@8d92b17e-a918-47ef-8528-8d048277d9a3/resource/subscriptions/0194be82-31af-4b66-88d1-3f3455eb859a/resourceGroups/azure-otel-demo-rg/providers/Microsoft.Insights/workbooks/8bc9f609-6ef1-4bd0-9fcd-7abcbf7d112b) | [Log Analytics Logs](https://portal.azure.com/#@8d92b17e-a918-47ef-8528-8d048277d9a3/blade/Microsoft_Azure_Monitoring_Logs/LogsBlade/resourceId/%2Fsubscriptions%2F0194be82-31af-4b66-88d1-3f3455eb859a%2FresourceGroups%2Fazure-otel-demo-rg%2Fproviders%2FMicrosoft.OperationalInsights%2Fworkspaces%2Fazure-otel-demo-logs) |
 | Metrics | [Azure OpenTelemetry Demo - Metrics](https://portal.azure.com/#@8d92b17e-a918-47ef-8528-8d048277d9a3/resource/subscriptions/0194be82-31af-4b66-88d1-3f3455eb859a/resourceGroups/azure-otel-demo-rg/providers/Microsoft.Insights/workbooks/efa668f7-ddc2-458c-bf26-46bfc75c9a91) | [Azure Monitor Workspace](https://portal.azure.com/#@8d92b17e-a918-47ef-8528-8d048277d9a3/resource/subscriptions/0194be82-31af-4b66-88d1-3f3455eb859a/resourceGroups/azure-otel-demo-rg/providers/Microsoft.Monitor/accounts/azure-otel-demo-metrics/overview) > Prometheus explorer |
 
+Those workbooks are cross-service signal explorers. The separately generated
+[per-service workbooks](dashboards/README.md) combine native KQL and PromQL into
+health and capacity views for each of the 20 Compose services. They replace the
+legacy Portal dashboards whose `AppRequests` and `AppMetrics` queries stopped
+receiving data when ingestion moved to native OTLP.
+
 The native stores, rather than legacy `App*` tables, are:
 
 - **Logs:** `OTelLogs` in `azure-otel-demo-logs`.
-- **Traces:** `OTelSpans` (spans), `OTelTraces` (trace-level records), and
-  `OTelEvents` (span events) in `azure-otel-demo-logs`.
+- **Traces:** `OTelSpans` (spans) and `OTelEvents` (span events) in
+  `azure-otel-demo-logs`. Traces are reconstructed by grouping spans on
+  `TraceId`; the deployed environment does not currently populate a separate
+  `OTelTraces` table.
 - **Resource records:** `OTelResources` in `azure-otel-demo-logs`. A resource
   record represents the OpenTelemetry resource identity shared by telemetry,
   such as `service.name`, `service.namespace`, host, process, and SDK
