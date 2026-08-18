@@ -110,6 +110,16 @@ processors:
       - 'metric.type == METRIC_DATA_TYPE_SUMMARY'
       - 'metric.type == METRIC_DATA_TYPE_EXPONENTIAL_HISTOGRAM'
       - 'metric.type == METRIC_DATA_TYPE_NONE'
+  filter/drop_load_generator_spans:
+    error_mode: ignore
+    traces:
+      span:
+        - 'resource.attributes["service.name"] == "load-generator"'
+  filter/drop_load_generator_logs:
+    error_mode: ignore
+    logs:
+      log_record:
+        - 'resource.attributes["service.name"] == "load-generator"'
   # CloudWatch rejects cumulative points with no StartTimeUnixNano, and the
   # prometheus/ad receiver (like prometheus receivers generally) doesn't set
   # one. subtract_initial_point over the true_reset_point default: it never
@@ -489,13 +499,18 @@ service:
       level: detailed
   pipelines:
     traces:
-      processors: [resourcedetection, memory_limiter, resource/aws_log_correlation, resource/aws_application, transform/sanitize_spans, gen_ai_normalizer, groupbyattrs, batch/traces]
+      processors: [resourcedetection, memory_limiter, resource/aws_log_correlation, resource/aws_application, filter/drop_load_generator_spans, transform/sanitize_spans, gen_ai_normalizer, groupbyattrs, batch/traces]
       # debug dropped from the base list: it prints every span to the
       # collector's own stdout, which is unnecessary volume once spans are
-      # actually landing in X-Ray via otlphttp/traces below. count added so
-      # every span is tallied into demo.span.count (see the connector above)
-      # on its way to X-Ray.
-      exporters: [span_metrics, otlphttp/traces, count]
+      # actually landing in X-Ray via otlphttp/traces below. Load-generator
+      # spans are dropped before both network and span-metrics export.
+      exporters: [span_metrics, otlphttp/traces]
+    # Fan out received spans before the forwarding pipeline's filter so
+    # demo.span.count includes the intentionally dropped load-generator spans.
+    traces/count_tap:
+      receivers: [otlp]
+      processors: [resourcedetection, memory_limiter, resource/aws_application]
+      exporters: [count]
     metrics:
       # Same as the base list minus docker_stats and host_metrics, neither of
       # which Fargate can serve -- no Docker socket, and no host filesystem to
@@ -525,10 +540,14 @@ service:
       # here -- adding resource/aws_application/groupbyattrs/batch/logs means
       # the array as a whole must be replaced, per the deep-merge note at the
       # top of this file.
-      processors: [resourcedetection, memory_limiter, transform/sanitize_logs, resource/aws_application, groupbyattrs, batch/logs]
-      # debug dropped, same reasoning as the traces pipeline above. count
-      # added so every log record is tallied into demo.log_record.count.
-      exporters: [routing/cloudwatch_logs, count/frontend_proxy_http, count]
+      processors: [resourcedetection, memory_limiter, transform/sanitize_logs, resource/aws_application, filter/drop_load_generator_logs, groupbyattrs, batch/logs]
+      # debug dropped, same reasoning as the traces pipeline above.
+      exporters: [routing/cloudwatch_logs, count/frontend_proxy_http]
+    # Count OTLP logs before the forwarding pipeline drops load-generator logs.
+    logs/count_tap:
+      receivers: [otlp]
+      processors: [resourcedetection, memory_limiter, resource/aws_application]
+      exporters: [count]
     logs/ad:
       receivers: [routing/cloudwatch_logs]
       exporters: [otlphttp/logs/ad]
