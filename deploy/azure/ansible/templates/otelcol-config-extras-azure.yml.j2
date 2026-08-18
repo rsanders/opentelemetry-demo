@@ -2,18 +2,53 @@ exporters:
   otlphttp/azure_egress:
     endpoint: http://host.docker.internal:14318
 
+processors:
+  filter/drop_load_generator_spans:
+    error_mode: ignore
+    traces:
+      span:
+        - 'resource.attributes["service.name"] == "load-generator"'
+  filter/drop_load_generator_logs:
+    error_mode: ignore
+    logs:
+      log_record:
+        - 'resource.attributes["service.name"] == "load-generator"'
+
+connectors:
+  count:
+    spans:
+      demo.span.count:
+        description: Count of spans received, by service.
+        attributes:
+          - key: service.name
+            default_value: unknown
+    logs:
+      demo.log_record.count:
+        description: Count of log records received, by service.
+        attributes:
+          - key: service.name
+            default_value: unknown
+
 service:
   extensions: [health_check]
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [resourcedetection, memory_limiter, transform/sanitize_spans, gen_ai_normalizer]
+      processors: [resourcedetection, memory_limiter, filter/drop_load_generator_spans, transform/sanitize_spans, gen_ai_normalizer]
       exporters: [debug, span_metrics, otlphttp/azure_egress]
+    traces/count_tap:
+      receivers: [otlp]
+      processors: [resourcedetection, memory_limiter]
+      exporters: [count]
     metrics:
-      receivers: [docker_stats, http_check/frontend-proxy, host_metrics, nginx, otlp, redis, postgresql, prometheus/ad, prometheus/envoy, prometheus/flagd, span_metrics, count/frontend_proxy_http]
+      receivers: [docker_stats, http_check/frontend-proxy, host_metrics, nginx, otlp, redis, postgresql, prometheus/ad, prometheus/envoy, prometheus/flagd, span_metrics, count/frontend_proxy_http, count]
       processors: [resourcedetection, transform/docker_stats_service_name, memory_limiter]
       exporters: [debug, otlphttp/azure_egress]
     logs:
       receivers: [otlp]
-      processors: [resourcedetection, memory_limiter, transform/sanitize_logs]
+      processors: [resourcedetection, memory_limiter, filter/drop_load_generator_logs, transform/sanitize_logs]
       exporters: [debug, count/frontend_proxy_http, otlphttp/azure_egress]
+    logs/count_tap:
+      receivers: [otlp]
+      processors: [resourcedetection, memory_limiter]
+      exporters: [count]
