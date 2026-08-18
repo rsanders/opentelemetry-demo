@@ -1,0 +1,7 @@
+ansible/inventory.ini
+ansible/otel-demo-ssh.pem
+ansible/*-ssh.pem
+terraform/.terraform/
+terraform/terraform.tfstate
+terraform/terraform.tfstate.*
+terraform/terraform.tfvars

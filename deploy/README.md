@@ -2,8 +2,7 @@
 
 This directory holds infrastructure-as-code for running the demo somewhere
 other than a developer's laptop. Each subdirectory targets one deployment
-environment; today there are two, both for us-east-1 and both forwarding
-telemetry into CloudWatch:
+environment:
 
 - [`aws/`](aws/) — a single-instance deployment: the whole `compose.yaml`
   stack on one EC2 instance, provisioned with Terraform and Ansible. See
@@ -11,6 +10,8 @@ telemetry into CloudWatch:
 - [`aws-ecs/`](aws-ecs/) — the same demo with each service in its own ECS
   Fargate task, defined entirely in AWS CDK (TypeScript). See
   [`aws-ecs/README.md`](aws-ecs/README.md).
+- [`azure/`](azure/) — a single Ubuntu VM deployment with Terraform and
+  Ansible. See [`azure/README.md`](azure/README.md).
 
 Both expose the same `make` interface (`up`, `update`, `down`, `outputs`,
 `plan`, `validate`, ...) and name their AWS resources distinctly —

@@ -1,0 +1,21 @@
+services:
+  ad:
+    build:
+      context: .
+      dockerfile: deploy/azure/Dockerfile.ad
+      args:
+        AD_BASE_IMAGE: ${IMAGE_NAME}:${DEMO_VERSION}-ad
+  frontend-proxy:
+    ports:
+      - "80:8080"
+  otel-collector:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+  azure-otlp-egress:
+    image: ${COLLECTOR_CONTRIB_IMAGE}
+    container_name: azure-otlp-egress
+    network_mode: host
+    restart: unless-stopped
+    command: ["--config=/etc/otelcol-config-azure.yml"]
+    volumes:
+      - ./src/otel-collector/otelcol-config-azure.yml:/etc/otelcol-config-azure.yml:ro

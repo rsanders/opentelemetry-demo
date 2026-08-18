@@ -1,0 +1,6 @@
+# Override values here if the default region or SKU is unavailable.
+# location        = "westus2"
+# vm_size         = "Standard_B2s_v2"
+# owner           = "your-name"
+# allowed_cidr    = "203.0.113.0/24"
+# compose_profile = "core"

@@ -1,0 +1,39 @@
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 172.17.0.1:14318
+
+processors:
+  batch:
+  cumulativetodelta:
+
+extensions:
+  azure_auth:
+    managed_identity: {}
+    scopes:
+      - https://monitor.azure.com/.default
+
+exporters:
+  otlphttp/azuremonitor:
+    traces_endpoint: "{{ logs_ingestion_endpoint }}/dataCollectionRules/{{ dcr_immutable_id }}/streams/Microsoft-OTLP-Traces/otlp/v1/traces"
+    logs_endpoint: "{{ logs_ingestion_endpoint }}/dataCollectionRules/{{ dcr_immutable_id }}/streams/Microsoft-OTLP-Logs/otlp/v1/logs"
+    metrics_endpoint: "{{ metrics_ingestion_endpoint }}/dataCollectionRules/{{ dcr_immutable_id }}/streams/Custom-Metrics-Otel/otlp/v1/metrics"
+    auth:
+      authenticator: azure_auth
+
+service:
+  extensions: [azure_auth]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/azuremonitor]
+    metrics:
+      receivers: [otlp]
+      processors: [cumulativetodelta, batch]
+      exporters: [otlphttp/azuremonitor]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/azuremonitor]

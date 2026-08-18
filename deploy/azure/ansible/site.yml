@@ -1,0 +1,123 @@
+---
+- name: Provision and deploy the OpenTelemetry Demo on Azure
+  hosts: otel_demo
+  become: true
+  gather_facts: false
+
+  pre_tasks:
+    - name: Wait for SSH to become reachable
+      ansible.builtin.wait_for_connection:
+        delay: 5
+        timeout: 300
+      vars:
+        ansible_become: false
+
+    - name: Gather facts
+      ansible.builtin.setup:
+
+    - name: Wait for cloud-init to finish
+      ansible.builtin.command: cloud-init status --wait
+      changed_when: false
+
+  tasks:
+    - name: Install Docker and deployment dependencies
+      ansible.builtin.apt:
+        name:
+          - docker.io
+          - docker-compose-v2
+          - git
+          - rsync
+        update_cache: true
+        state: present
+
+    - name: Enable Docker
+      ansible.builtin.systemd:
+        name: docker
+        enabled: true
+        state: started
+
+    - name: Add deployment user to Docker group
+      ansible.builtin.user:
+        name: azureuser
+        groups: docker
+        append: true
+
+    - name: Reset connection to pick up Docker group membership
+      ansible.builtin.meta: reset_connection
+
+    - name: Create deployment directory
+      ansible.builtin.file:
+        path: "{{ repo_dest }}"
+        state: directory
+        owner: azureuser
+        group: azureuser
+        mode: "0755"
+
+    - name: Sync repository to VM
+      ansible.posix.synchronize:
+        src: "{{ playbook_dir }}/../../../"
+        dest: "{{ repo_dest }}"
+        delete: true
+        rsync_opts:
+          - "--exclude=.git"
+          - "--exclude=deploy/aws/terraform/.terraform"
+          - "--exclude=deploy/azure/terraform/.terraform"
+          - "--exclude=**/node_modules"
+          - "--exclude=**/.next"
+          - "--exclude=**/target"
+          - "--exclude=**/__pycache__"
+      become: false
+
+    - name: Render Azure Compose override
+      ansible.builtin.template:
+        src: compose.azure-override.yml.j2
+        dest: "{{ repo_dest }}/compose.azure-override.yml"
+        owner: azureuser
+        group: azureuser
+        mode: "0644"
+
+    - name: Render Azure Monitor collector configuration
+      ansible.builtin.template:
+        src: otelcol-config-extras-azure.yml.j2
+        dest: "{{ repo_dest }}/src/otel-collector/otelcol-config-extras.yml"
+        owner: azureuser
+        group: azureuser
+        mode: "0644"
+
+    - name: Render native Azure OTLP egress collector configuration
+      ansible.builtin.template:
+        src: otelcol-config-azure.yml.j2
+        dest: "{{ repo_dest }}/src/otel-collector/otelcol-config-azure.yml"
+        owner: azureuser
+        group: azureuser
+        mode: "0644"
+
+    - name: Pull Compose images
+      ansible.builtin.command: >-
+        docker compose -f compose.yaml{% if compose_profile == 'full' %} -f compose.full.yaml{% endif %}
+        -f compose.azure-override.yml pull
+      args:
+        chdir: "{{ repo_dest }}"
+      become_user: azureuser
+      environment:
+        OTEL_SERVICE_VERSION: "{{ lookup('ansible.builtin.env', 'OTEL_SERVICE_VERSION') }}"
+
+    - name: Build deployment-local image extensions
+      ansible.builtin.command: >-
+        docker compose -f compose.yaml{% if compose_profile == 'full' %} -f compose.full.yaml{% endif %}
+        -f compose.azure-override.yml build ad otel-collector
+      args:
+        chdir: "{{ repo_dest }}"
+      become_user: azureuser
+      environment:
+        OTEL_SERVICE_VERSION: "{{ lookup('ansible.builtin.env', 'OTEL_SERVICE_VERSION') }}"
+
+    - name: Start demo stack
+      ansible.builtin.command: >-
+        docker compose -f compose.yaml{% if compose_profile == 'full' %} -f compose.full.yaml{% endif %}
+        -f compose.azure-override.yml up -d --remove-orphans --force-recreate
+      args:
+        chdir: "{{ repo_dest }}"
+      become_user: azureuser
+      environment:
+        OTEL_SERVICE_VERSION: "{{ lookup('ansible.builtin.env', 'OTEL_SERVICE_VERSION') }}"

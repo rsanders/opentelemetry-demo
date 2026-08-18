@@ -1,0 +1,19 @@
+exporters:
+  otlphttp/azure_egress:
+    endpoint: http://host.docker.internal:14318
+
+service:
+  extensions: [health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [resourcedetection, memory_limiter, transform/sanitize_spans, gen_ai_normalizer]
+      exporters: [debug, span_metrics, otlphttp/azure_egress]
+    metrics:
+      receivers: [docker_stats, http_check/frontend-proxy, host_metrics, nginx, otlp, redis, postgresql, prometheus/ad, prometheus/envoy, prometheus/flagd, span_metrics, count/frontend_proxy_http]
+      processors: [resourcedetection, transform/docker_stats_service_name, memory_limiter]
+      exporters: [debug, otlphttp/azure_egress]
+    logs:
+      receivers: [otlp]
+      processors: [resourcedetection, memory_limiter, transform/sanitize_logs]
+      exporters: [debug, count/frontend_proxy_http, otlphttp/azure_egress]

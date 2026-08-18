@@ -1,0 +1,2 @@
+[otel_demo]
+localhost ansible_connection=local

@@ -1,0 +1,647 @@
+{
+  "lenses": [
+    {
+      "order": 0,
+      "parts": [
+        {
+          "position": {
+            "x": 0,
+            "y": 0,
+            "colSpan": 16,
+            "rowSpan": 2
+          },
+          "metadata": {
+            "inputs": [],
+            "type": "Extension/HubsExtension/PartType/MarkdownPart",
+            "settings": {
+              "content": {
+                "settings": {
+                  "title": "OpenTelemetry Demo: frontend",
+                  "subtitle": "Application Insights / Log Analytics",
+                  "content": "Request golden signals and service telemetry for `frontend` over the last 6 hours. [Open Application Insights](https://portal.azure.com/#@/resource/subscriptions/0194be82-31af-4b66-88d1-3f3455eb859a/resourceGroups/azure-otel-demo-rg/providers/Microsoft.Insights/components/azure-otel-demo-insights/overview)."
+                }
+              }
+            }
+          }
+        },
+        {
+          "position": {
+            "x": 0,
+            "y": 2,
+            "colSpan": 8,
+            "rowSpan": 5
+          },
+          "metadata": {
+            "inputs": [
+              {
+                "name": "resourceTypeMode",
+                "isOptional": true
+              },
+              {
+                "name": "ComponentId",
+                "value": "/subscriptions/0194be82-31af-4b66-88d1-3f3455eb859a/resourceGroups/azure-otel-demo-rg/providers/Microsoft.OperationalInsights/workspaces/azure-otel-demo-logs",
+                "isOptional": true
+              },
+              {
+                "name": "Scope",
+                "value": {
+                  "resourceIds": [
+                    "/subscriptions/0194be82-31af-4b66-88d1-3f3455eb859a/resourceGroups/azure-otel-demo-rg/providers/Microsoft.OperationalInsights/workspaces/azure-otel-demo-logs"
+                  ]
+                },
+                "isOptional": true
+              },
+              {
+                "name": "PartId",
+                "value": "otel-demo-0-2",
+                "isOptional": true
+              },
+              {
+                "name": "Version",
+                "value": "2.0",
+                "isOptional": true
+              },
+              {
+                "name": "TimeRange",
+                "isOptional": true
+              },
+              {
+                "name": "DashboardId",
+                "isOptional": true
+              },
+              {
+                "name": "Query",
+                "value": "AppRequests\n| where TimeGenerated > ago(6h) and (AppRoleName == \"frontend\" or AppRoleName endswith \".frontend\")\n| summarize RequestsPerSecond=sum(ItemCount)/60.0 by bin(TimeGenerated, 1m)\n| order by TimeGenerated asc",
+                "isOptional": true
+              },
+              {
+                "name": "ControlType",
+                "value": "FrameControlChart",
+                "isOptional": true
+              },
+              {
+                "name": "PartTitle",
+                "value": "Request rate",
+                "isOptional": true
+              },
+              {
+                "name": "PartSubTitle",
+                "value": "Requests per second",
+                "isOptional": true
+              },
+              {
+                "name": "IsQueryContainTimeRange",
+                "value": true,
+                "isOptional": true
+              },
+              {
+                "name": "SpecificChart",
+                "value": "Line",
+                "isOptional": true
+              },
+              {
+                "name": "Dimensions",
+                "value": {
+                  "xAxis": {
+                    "name": "TimeGenerated",
+                    "type": "datetime"
+                  },
+                  "yAxis": [
+                    {
+                      "name": "RequestsPerSecond",
+                      "type": "real"
+                    }
+                  ],
+                  "aggregation": "Average"
+                },
+                "isOptional": true
+              },
+              {
+                "name": "LegendOptions",
+                "value": {
+                  "isEnabled": true,
+                  "position": "Bottom"
+                },
+                "isOptional": true
+              }
+            ],
+            "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+          }
+        },
+        {
+          "position": {
+            "x": 8,
+            "y": 2,
+            "colSpan": 8,
+            "rowSpan": 5
+          },
+          "metadata": {
+            "inputs": [
+              {
+                "name": "resourceTypeMode",
+                "isOptional": true
+              },
+              {
+                "name": "ComponentId",
+                "value": "/subscriptions/0194be82-31af-4b66-88d1-3f3455eb859a/resourceGroups/azure-otel-demo-rg/providers/Microsoft.OperationalInsights/workspaces/azure-otel-demo-logs",
+                "isOptional": true
+              },
+              {
+                "name": "Scope",
+                "value": {
+                  "resourceIds": [
+                    "/subscriptions/0194be82-31af-4b66-88d1-3f3455eb859a/resourceGroups/azure-otel-demo-rg/providers/Microsoft.OperationalInsights/workspaces/azure-otel-demo-logs"
+                  ]
+                },
+                "isOptional": true
+              },
+              {
+                "name": "PartId",
+                "value": "otel-demo-8-2",
+                "isOptional": true
+              },
+              {
+                "name": "Version",
+                "value": "2.0",
+                "isOptional": true
+              },
+              {
+                "name": "TimeRange",
+                "isOptional": true
+              },
+              {
+                "name": "DashboardId",
+                "isOptional": true
+              },
+              {
+                "name": "Query",
+                "value": "AppRequests\n| where TimeGenerated > ago(6h) and (AppRoleName == \"frontend\" or AppRoleName endswith \".frontend\")\n| summarize Requests=sum(ItemCount), Failures=sumif(ItemCount, Success == false) by bin(TimeGenerated, 1m)\n| extend ErrorPercent=iff(Requests == 0, 0.0, 100.0 * todouble(Failures) / Requests)\n| project TimeGenerated, ErrorPercent\n| order by TimeGenerated asc",
+                "isOptional": true
+              },
+              {
+                "name": "ControlType",
+                "value": "FrameControlChart",
+                "isOptional": true
+              },
+              {
+                "name": "PartTitle",
+                "value": "Error rate",
+                "isOptional": true
+              },
+              {
+                "name": "PartSubTitle",
+                "value": "Failed requests as a percentage",
+                "isOptional": true
+              },
+              {
+                "name": "IsQueryContainTimeRange",
+                "value": true,
+                "isOptional": true
+              },
+              {
+                "name": "SpecificChart",
+                "value": "Line",
+                "isOptional": true
+              },
+              {
+                "name": "Dimensions",
+                "value": {
+                  "xAxis": {
+                    "name": "TimeGenerated",
+                    "type": "datetime"
+                  },
+                  "yAxis": [
+                    {
+                      "name": "ErrorPercent",
+                      "type": "real"
+                    }
+                  ],
+                  "aggregation": "Average"
+                },
+                "isOptional": true
+              },
+              {
+                "name": "LegendOptions",
+                "value": {
+                  "isEnabled": true,
+                  "position": "Bottom"
+                },
+                "isOptional": true
+              }
+            ],
+            "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+          }
+        },
+        {
+          "position": {
+            "x": 0,
+            "y": 7,
+            "colSpan": 8,
+            "rowSpan": 5
+          },
+          "metadata": {
+            "inputs": [
+              {
+                "name": "resourceTypeMode",
+                "isOptional": true
+              },
+              {
+                "name": "ComponentId",
+                "value": "/subscriptions/0194be82-31af-4b66-88d1-3f3455eb859a/resourceGroups/azure-otel-demo-rg/providers/Microsoft.OperationalInsights/workspaces/azure-otel-demo-logs",
+                "isOptional": true
+              },
+              {
+                "name": "Scope",
+                "value": {
+                  "resourceIds": [
+                    "/subscriptions/0194be82-31af-4b66-88d1-3f3455eb859a/resourceGroups/azure-otel-demo-rg/providers/Microsoft.OperationalInsights/workspaces/azure-otel-demo-logs"
+                  ]
+                },
+                "isOptional": true
+              },
+              {
+                "name": "PartId",
+                "value": "otel-demo-0-7",
+                "isOptional": true
+              },
+              {
+                "name": "Version",
+                "value": "2.0",
+                "isOptional": true
+              },
+              {
+                "name": "TimeRange",
+                "isOptional": true
+              },
+              {
+                "name": "DashboardId",
+                "isOptional": true
+              },
+              {
+                "name": "Query",
+                "value": "AppRequests\n| where TimeGenerated > ago(6h) and (AppRoleName == \"frontend\" or AppRoleName endswith \".frontend\")\n| summarize P50Milliseconds=percentile(DurationMs, 50), P95Milliseconds=percentile(DurationMs, 95), P99Milliseconds=percentile(DurationMs, 99) by bin(TimeGenerated, 1m)\n| order by TimeGenerated asc",
+                "isOptional": true
+              },
+              {
+                "name": "ControlType",
+                "value": "FrameControlChart",
+                "isOptional": true
+              },
+              {
+                "name": "PartTitle",
+                "value": "Request latency",
+                "isOptional": true
+              },
+              {
+                "name": "PartSubTitle",
+                "value": "P50, P95, and P99 in milliseconds",
+                "isOptional": true
+              },
+              {
+                "name": "IsQueryContainTimeRange",
+                "value": true,
+                "isOptional": true
+              },
+              {
+                "name": "SpecificChart",
+                "value": "Line",
+                "isOptional": true
+              },
+              {
+                "name": "Dimensions",
+                "value": {
+                  "xAxis": {
+                    "name": "TimeGenerated",
+                    "type": "datetime"
+                  },
+                  "yAxis": [
+                    {
+                      "name": "P50Milliseconds",
+                      "type": "real"
+                    },
+                    {
+                      "name": "P95Milliseconds",
+                      "type": "real"
+                    },
+                    {
+                      "name": "P99Milliseconds",
+                      "type": "real"
+                    }
+                  ],
+                  "aggregation": "Average"
+                },
+                "isOptional": true
+              },
+              {
+                "name": "LegendOptions",
+                "value": {
+                  "isEnabled": true,
+                  "position": "Bottom"
+                },
+                "isOptional": true
+              }
+            ],
+            "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+          }
+        },
+        {
+          "position": {
+            "x": 8,
+            "y": 7,
+            "colSpan": 8,
+            "rowSpan": 5
+          },
+          "metadata": {
+            "inputs": [
+              {
+                "name": "resourceTypeMode",
+                "isOptional": true
+              },
+              {
+                "name": "ComponentId",
+                "value": "/subscriptions/0194be82-31af-4b66-88d1-3f3455eb859a/resourceGroups/azure-otel-demo-rg/providers/Microsoft.OperationalInsights/workspaces/azure-otel-demo-logs",
+                "isOptional": true
+              },
+              {
+                "name": "Scope",
+                "value": {
+                  "resourceIds": [
+                    "/subscriptions/0194be82-31af-4b66-88d1-3f3455eb859a/resourceGroups/azure-otel-demo-rg/providers/Microsoft.OperationalInsights/workspaces/azure-otel-demo-logs"
+                  ]
+                },
+                "isOptional": true
+              },
+              {
+                "name": "PartId",
+                "value": "otel-demo-8-7",
+                "isOptional": true
+              },
+              {
+                "name": "Version",
+                "value": "2.0",
+                "isOptional": true
+              },
+              {
+                "name": "TimeRange",
+                "isOptional": true
+              },
+              {
+                "name": "DashboardId",
+                "isOptional": true
+              },
+              {
+                "name": "Query",
+                "value": "AppMetrics\n| where TimeGenerated > ago(6h) and (AppRoleName == \"frontend\" or AppRoleName endswith \".frontend\")\n| where Name in (\"container.cpu.utilization\", \"container.memory.percent\", \"container.memory.usage\", \"container.memory.usage.total\")\n| summarize Value=avg(Sum) by bin(TimeGenerated, 1m), Name\n| order by TimeGenerated asc",
+                "isOptional": true
+              },
+              {
+                "name": "ControlType",
+                "value": "FrameControlChart",
+                "isOptional": true
+              },
+              {
+                "name": "PartTitle",
+                "value": "Container resources",
+                "isOptional": true
+              },
+              {
+                "name": "PartSubTitle",
+                "value": "CPU and memory telemetry",
+                "isOptional": true
+              },
+              {
+                "name": "IsQueryContainTimeRange",
+                "value": true,
+                "isOptional": true
+              },
+              {
+                "name": "SpecificChart",
+                "value": "Line",
+                "isOptional": true
+              },
+              {
+                "name": "Dimensions",
+                "value": {
+                  "xAxis": {
+                    "name": "TimeGenerated",
+                    "type": "datetime"
+                  },
+                  "yAxis": [
+                    {
+                      "name": "Value",
+                      "type": "real"
+                    }
+                  ],
+                  "splitBy": [
+                    {
+                      "name": "Name",
+                      "type": "string"
+                    }
+                  ],
+                  "aggregation": "Average"
+                },
+                "isOptional": true
+              },
+              {
+                "name": "LegendOptions",
+                "value": {
+                  "isEnabled": true,
+                  "position": "Bottom"
+                },
+                "isOptional": true
+              }
+            ],
+            "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+          }
+        },
+        {
+          "position": {
+            "x": 0,
+            "y": 12,
+            "colSpan": 8,
+            "rowSpan": 5
+          },
+          "metadata": {
+            "inputs": [
+              {
+                "name": "resourceTypeMode",
+                "isOptional": true
+              },
+              {
+                "name": "ComponentId",
+                "value": "/subscriptions/0194be82-31af-4b66-88d1-3f3455eb859a/resourceGroups/azure-otel-demo-rg/providers/Microsoft.OperationalInsights/workspaces/azure-otel-demo-logs",
+                "isOptional": true
+              },
+              {
+                "name": "Scope",
+                "value": {
+                  "resourceIds": [
+                    "/subscriptions/0194be82-31af-4b66-88d1-3f3455eb859a/resourceGroups/azure-otel-demo-rg/providers/Microsoft.OperationalInsights/workspaces/azure-otel-demo-logs"
+                  ]
+                },
+                "isOptional": true
+              },
+              {
+                "name": "PartId",
+                "value": "otel-demo-0-12",
+                "isOptional": true
+              },
+              {
+                "name": "Version",
+                "value": "2.0",
+                "isOptional": true
+              },
+              {
+                "name": "TimeRange",
+                "isOptional": true
+              },
+              {
+                "name": "DashboardId",
+                "isOptional": true
+              },
+              {
+                "name": "Query",
+                "value": "AppRequests\n| where TimeGenerated > ago(24h) and (AppRoleName == \"frontend\" or AppRoleName endswith \".frontend\") and Success == false\n| project TimeGenerated, OperationName, ResultCode, DurationMs, Properties\n| order by TimeGenerated desc\n| take 100",
+                "isOptional": true
+              },
+              {
+                "name": "ControlType",
+                "value": "AnalyticsGrid",
+                "isOptional": true
+              },
+              {
+                "name": "PartTitle",
+                "value": "Recent failed requests",
+                "isOptional": true
+              },
+              {
+                "name": "PartSubTitle",
+                "value": "Most recent 100 failures",
+                "isOptional": true
+              },
+              {
+                "name": "IsQueryContainTimeRange",
+                "value": true,
+                "isOptional": true
+              }
+            ],
+            "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+          }
+        },
+        {
+          "position": {
+            "x": 8,
+            "y": 12,
+            "colSpan": 8,
+            "rowSpan": 5
+          },
+          "metadata": {
+            "inputs": [
+              {
+                "name": "resourceTypeMode",
+                "isOptional": true
+              },
+              {
+                "name": "ComponentId",
+                "value": "/subscriptions/0194be82-31af-4b66-88d1-3f3455eb859a/resourceGroups/azure-otel-demo-rg/providers/Microsoft.OperationalInsights/workspaces/azure-otel-demo-logs",
+                "isOptional": true
+              },
+              {
+                "name": "Scope",
+                "value": {
+                  "resourceIds": [
+                    "/subscriptions/0194be82-31af-4b66-88d1-3f3455eb859a/resourceGroups/azure-otel-demo-rg/providers/Microsoft.OperationalInsights/workspaces/azure-otel-demo-logs"
+                  ]
+                },
+                "isOptional": true
+              },
+              {
+                "name": "PartId",
+                "value": "otel-demo-8-12",
+                "isOptional": true
+              },
+              {
+                "name": "Version",
+                "value": "2.0",
+                "isOptional": true
+              },
+              {
+                "name": "TimeRange",
+                "isOptional": true
+              },
+              {
+                "name": "DashboardId",
+                "isOptional": true
+              },
+              {
+                "name": "Query",
+                "value": "AppMetrics\n| where TimeGenerated > ago(6h) and (AppRoleName == \"frontend\" or AppRoleName endswith \".frontend\")\n| summarize Value=sum(Sum) by bin(TimeGenerated, 1m), Name\n| order by TimeGenerated asc",
+                "isOptional": true
+              },
+              {
+                "name": "ControlType",
+                "value": "FrameControlChart",
+                "isOptional": true
+              },
+              {
+                "name": "PartTitle",
+                "value": "Service metrics",
+                "isOptional": true
+              },
+              {
+                "name": "PartSubTitle",
+                "value": "Raw metric activity; use the legend to isolate a series",
+                "isOptional": true
+              },
+              {
+                "name": "IsQueryContainTimeRange",
+                "value": true,
+                "isOptional": true
+              },
+              {
+                "name": "SpecificChart",
+                "value": "Line",
+                "isOptional": true
+              },
+              {
+                "name": "Dimensions",
+                "value": {
+                  "xAxis": {
+                    "name": "TimeGenerated",
+                    "type": "datetime"
+                  },
+                  "yAxis": [
+                    {
+                      "name": "Value",
+                      "type": "real"
+                    }
+                  ],
+                  "splitBy": [
+                    {
+                      "name": "Name",
+                      "type": "string"
+                    }
+                  ],
+                  "aggregation": "Average"
+                },
+                "isOptional": true
+              },
+              {
+                "name": "LegendOptions",
+                "value": {
+                  "isEnabled": true,
+                  "position": "Bottom"
+                },
+                "isOptional": true
+              }
+            ],
+            "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+          }
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "model": {}
+  }
+}
