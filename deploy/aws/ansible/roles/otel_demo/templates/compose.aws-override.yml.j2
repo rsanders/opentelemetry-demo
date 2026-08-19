@@ -51,6 +51,22 @@ services:
   # normal OTLP CloudWatch path. Async mode prevents a collector restart from
   # blocking flagd startup, buffering records until the receiver reconnects.
   flagd:
+    # Layers compose.flagd-overrides-aws.json (rendered from
+    # flagd-overrides-aws.json.j2) on top of the upstream src/flagd/demo.flagd.json
+    # as a second flagd sync source -- flagd merges sources by flag key, with
+    # later --uri args winning on conflict, so this overrides individual flags
+    # (e.g. loadGeneratorVUs' default) without touching the upstream file.
+    volumes:
+      - ./compose.flagd-overrides-aws.json:/etc/flagd-aws-overrides.json:ro
+    command: [
+      "start",
+      "--uri",
+      "file:./etc/flagd/demo.flagd.json",
+      "--uri",
+      "file:/etc/flagd-aws-overrides.json",
+      "--management-port",
+      "${FLAGD_MANAGEMENT_PORT}"
+    ]
     logging:
       driver: fluentd
       options:

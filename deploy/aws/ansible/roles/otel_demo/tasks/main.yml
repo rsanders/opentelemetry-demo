@@ -36,6 +36,14 @@
     group: ec2-user
     mode: "0644"
 
+- name: Render AWS overrides for flagd flags (lowers default load-generator VUs; see src/flagd/demo.flagd.json for the upstream flag)
+  ansible.builtin.template:
+    src: flagd-overrides-aws.json.j2
+    dest: "{{ repo_dest }}/compose.flagd-overrides-aws.json"
+    owner: ec2-user
+    group: ec2-user
+    mode: "0644"
+
 - name: Deploy the AWS compose override (publishes frontend-proxy on :80, routes flagd logs to CloudWatch)
   ansible.builtin.template:
     src: compose.aws-override.yml.j2

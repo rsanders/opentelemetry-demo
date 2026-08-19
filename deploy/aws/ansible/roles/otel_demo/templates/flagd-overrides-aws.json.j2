@@ -1,0 +1,16 @@
+{
+  "flags": {
+    "loadGeneratorVUs": {
+      "defaultVariant": "1",
+      "description": "AWS override of the upstream demo.flagd.json flag: lowers the default HTTP scenario VU count to cut synthetic-traffic telemetry volume/cost. See deploy/aws/README.md.",
+      "state": "ENABLED",
+      "variants": {
+        "1": 1,
+        "5": 5,
+        "10": 10,
+        "25": 25,
+        "50": 50
+      }
+    }
+  }
+}
