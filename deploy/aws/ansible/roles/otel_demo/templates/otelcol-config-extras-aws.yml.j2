@@ -41,6 +41,48 @@ extensions:
     region: {{ aws_region }}
 
 receivers:
+  # AWS cost control: collect Collector-owned metrics once per minute. SDKs
+  # that push to the OTLP receiver retain their own independent export cadence.
+  http_check/frontend-proxy:
+    collection_interval: 60s
+  nginx:
+    collection_interval: 60s
+  docker_stats:
+    collection_interval: 60s
+  redis:
+    collection_interval: 60s
+  postgresql:
+    collection_interval: 60s
+  prometheus/ad:
+    config:
+      scrape_configs:
+        - job_name: ad
+          scrape_interval: 60s
+          static_configs:
+            - targets: ["${env:AD_PROMETHEUS_ADDR}"]
+  prometheus/envoy:
+    config:
+      scrape_configs:
+        - job_name: envoy
+          scrape_interval: 60s
+          metrics_path: /stats/prometheus
+          params:
+            usedonly: ["true"]
+          static_configs:
+            - targets: ["${env:ENVOY_ADMIN_ADDR}"]
+  prometheus/flagd:
+    config:
+      scrape_configs:
+        - job_name: flagd
+          scrape_interval: 60s
+          static_configs:
+            - targets: ["${env:FLAGD_MANAGEMENT_ADDR}"]
+  host_metrics:
+    collection_interval: 60s
+{% if compose_profile == 'full' %}
+  kafkametrics:
+    collection_interval: 60s
+{% endif %}
   # flagd v0.16 has OTLP metrics/traces support but no OTLP logs exporter.
   # Docker forwards only flagd's stdout to this host-published receiver; its
   # dedicated pipeline below assigns the missing resource identity before the
