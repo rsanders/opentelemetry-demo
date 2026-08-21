@@ -148,19 +148,73 @@ processors:
       - key: service.name
         value: flagd
         action: upsert
-  # The host_metrics process scraper copies full process commands into
-  # resource attributes. On this host, process.command_line reaches 5,375
-  # characters (the ad service's Java classpath) and process.command reaches
-  # 1,151 characters (Chromium), but CloudWatch's OTLP metrics endpoint caps
-  # resource string values at 1,024 characters and silently drops every data
-  # point carrying a longer value. Remove these high-cardinality command fields
-  # before export; executable name/path and process.pid still identify the
-  # process without exporting command arguments or environment-derived values.
+  # Reduce CloudWatch's per-GB ingestion volume by removing resource metadata
+  # that is constant, ephemeral, redundant, or only useful for SDK/runtime
+  # debugging. This processor is wired only into the AWS metrics pipeline, so
+  # traces, logs, and non-AWS deployments retain their complete resources.
+  # Keep service/deployment identity, AWS/EC2 correlation, container name/image,
+  # executable/runtime name, and SDK language/name.
   resource/sanitize_cloudwatch_metrics:
     attributes:
+      - key: browser.language
+        action: delete
+      - key: container.hostname
+        action: delete
+      - key: container.id
+        action: delete
+      - key: host.arch
+        action: delete
+      - key: host.cpu.cache.l2.size
+        action: delete
+      - key: host.cpu.family
+        action: delete
+      - key: host.cpu.model.id
+        action: delete
+      - key: host.cpu.model.name
+        action: delete
+      - key: host.cpu.stepping
+        action: delete
+      - key: host.cpu.vendor.id
+        action: delete
+      - key: host_name
+        action: delete
+      - key: os.description
+        action: delete
+      - key: os_description
+        action: delete
+      - key: os.name
+        action: delete
+      - key: os.version
+        action: delete
+      - key: process.args_count
+        action: delete
       - key: process.command
         action: delete
+      - key: process.command_args
+        action: delete
       - key: process.command_line
+        action: delete
+      - key: process.executable.path
+        action: delete
+      - key: process.owner
+        action: delete
+      - key: process.pid
+        action: delete
+      - key: process.runtime.description
+        action: delete
+      - key: process.runtime.version
+        action: delete
+      - key: process_runtime_version
+        action: delete
+      - key: telemetry.auto.version
+        action: delete
+      - key: telemetry.distro.version
+        action: delete
+      - key: telemetry.sdk.version
+        action: delete
+      - key: telemetry_sdk_version
+        action: delete
+      - key: user_agent.original
         action: delete
   # Keep every other resource attribute, but truncate any string that exceeds
   # CloudWatch's 1,024-character limit. The resource processor above handles
