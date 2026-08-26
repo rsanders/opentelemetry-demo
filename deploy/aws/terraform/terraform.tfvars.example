@@ -14,3 +14,9 @@ owner = "your name or email"
 # instance_type        = "t3.xlarge"
 # root_volume_size_gb  = 60
 # compose_profile      = "core" # or "full" to add Kafka/accounting/fraud-detection
+
+# Optional GenAI agent/chatbot/mcp layer (see deploy/aws/README.md):
+# enable_agent_layer   = false # true to add the agent/mcp/chatbot GenAI services (compose.agent.yaml)
+# llm_base_url         = ""    # required if enable_agent_layer = true, e.g. https://api.openai.com/v1
+# llm_model            = ""    # required if enable_agent_layer = true, e.g. gpt-4o
+# llm_api_key          = ""    # required if enable_agent_layer = true; stored in Secrets Manager, not in this file

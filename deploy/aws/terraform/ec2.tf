@@ -39,6 +39,17 @@ resource "aws_instance" "this" {
   tags = {
     Name = "${var.project_name}"
   }
+
+  lifecycle {
+    # data.aws_ami.al2023 tracks whatever AL2023 build is newest at plan time
+    # (most_recent = true, no version pin), so a plan run any time after AWS
+    # publishes a new one would otherwise show this instance as needing
+    # replacement -- destroying and recreating a live host as a side effect of
+    # an unrelated change. New instances still pick up the latest AMI at
+    # create time; this only stops an already-running one from being replaced
+    # by drift alone.
+    ignore_changes = [ami]
+  }
 }
 
 resource "aws_eip" "this" {
@@ -53,12 +64,20 @@ resource "aws_eip" "this" {
 resource "local_file" "ansible_inventory" {
   filename = "${path.module}/../ansible/inventory.ini"
   content = templatefile("${path.module}/templates/inventory.tpl.ini", {
-    public_ip         = aws_eip.this.public_ip
-    ssh_key_path      = "${var.project_name}-ssh.pem"
-    aws_region        = var.region
-    compose_profile   = var.compose_profile
-    app_log_group     = aws_cloudwatch_log_group.app.name
-    otelcol_log_group = aws_cloudwatch_log_group.otelcol.name
-    project_name      = var.project_name
+    public_ip              = aws_eip.this.public_ip
+    ssh_key_path           = "${var.project_name}-ssh.pem"
+    aws_region             = var.region
+    compose_profile        = var.compose_profile
+    app_log_group          = aws_cloudwatch_log_group.app.name
+    otelcol_log_group      = aws_cloudwatch_log_group.otelcol.name
+    project_name           = var.project_name
+    enable_agent_layer     = var.enable_agent_layer
+    llm_base_url           = var.llm_base_url
+    llm_model              = var.llm_model
+    llm_api_key_secret_arn = try(aws_secretsmanager_secret.llm_api_key[0].arn, "")
+    agent_image            = try("${aws_ecr_repository.agentic["agent"].repository_url}:latest", "")
+    chatbot_image          = try("${aws_ecr_repository.agentic["chatbot"].repository_url}:latest", "")
+    mcp_image              = try("${aws_ecr_repository.agentic["mcp"].repository_url}:latest", "")
+    ecr_registry_host      = try(regex("^[^/]+", aws_ecr_repository.agentic["agent"].repository_url), "")
   })
 }

@@ -52,8 +52,60 @@
     group: ec2-user
     mode: "0644"
 
+- name: Compute the effective docker compose -f flags
+  # compose_file_flags[compose_profile] picks core vs full; the agent/mcp/
+  # chatbot GenAI layer (compose.agent.yaml) is an orthogonal toggle that can
+  # layer on top of either, gated on enable_agent_layer instead of folding
+  # it into compose_profile.
+  ansible.builtin.set_fact:
+    compose_flags: >-
+      {{ compose_file_flags[compose_profile] }}{{ ' -f compose.agent.yaml' if (enable_agent_layer | default(false) | bool) else '' }}
+
+- name: Fetch LLM API key from Secrets Manager
+  when: enable_agent_layer | default(false) | bool
+  no_log: true
+  ansible.builtin.command:
+    cmd: >-
+      aws secretsmanager get-secret-value
+      --region {{ aws_region }}
+      --secret-id {{ llm_api_key_secret_arn }}
+      --query SecretString --output text
+  register: llm_api_key_result
+  changed_when: false
+
+- name: Merge the agent layer's LLM config into the compose environment
+  # USE_VCR=False forces real calls to llm_base_url instead of replaying the
+  # committed VCR cassettes -- the point of this layer is real GenAI
+  # telemetry. Shell env beats the repo's .env file in Compose's own
+  # precedence, so this never needs writing the key to disk on the instance.
+  when: enable_agent_layer | default(false) | bool
+  no_log: true
+  ansible.builtin.set_fact:
+    compose_environment: "{{ compose_environment | combine({
+      'API_KEY': llm_api_key_result.stdout,
+      'OPENAI_API_KEY': llm_api_key_result.stdout,
+      'LLM_BASE_URL': llm_base_url,
+      'LLM_MODEL': llm_model,
+      'USE_VCR': 'False',
+      }) }}"
+
+- name: Log in to ECR for the agent/chatbot/mcp images
+  # These three images aren't published anywhere public (see ecr.tf) --
+  # `make push-agentic-images` pushes them here once per source change, and
+  # the instance just needs its own pull credentials to fetch them. Must run
+  # as ec2-user (matching "Pull compose images" below) rather than the play's
+  # default root, since `docker login` writes credentials to the running
+  # user's own ~/.docker/config.json -- a login as root is invisible to a
+  # pull run as ec2-user.
+  when: enable_agent_layer | default(false) | bool
+  become_user: ec2-user
+  ansible.builtin.shell: >-
+    aws ecr get-login-password --region {{ aws_region }}
+    | docker login --username AWS --password-stdin {{ ecr_registry_host }}
+  changed_when: false
+
 - name: Pull compose images
-  ansible.builtin.shell: "docker compose {{ compose_file_flags[compose_profile] }} -f compose.aws-override.yml pull"
+  ansible.builtin.shell: "docker compose {{ compose_flags }} -f compose.aws-override.yml pull"
   args:
     chdir: "{{ repo_dest }}"
   become_user: ec2-user
@@ -63,8 +115,9 @@
   # The public ad image lacks grpc_health_probe. Its AWS-only Dockerfile uses
   # that pulled image as the final-stage base and copies in only the probe,
   # avoiding a source/Gradle rebuild while replacing the local tag Compose uses.
+  # agent/chatbot/mcp are pulled prebuilt from ECR (see above), not built here.
   ansible.builtin.shell: >-
-    docker compose {{ compose_file_flags[compose_profile] }} -f compose.aws-override.yml
+    docker compose {{ compose_flags }} -f compose.aws-override.yml
     build {{ locally_extended_services | join(' ') }}
   args:
     chdir: "{{ repo_dest }}"
@@ -82,7 +135,7 @@
   # on Compose's own definition diff instead, at the cost of needing the
   # bind_mount_services task below to catch what that diff can't see.
   ansible.builtin.shell: >-
-    docker compose {{ compose_file_flags[compose_profile] }} -f compose.aws-override.yml
+    docker compose {{ compose_flags }} -f compose.aws-override.yml
     up -d --remove-orphans{{ '' if fast_update else ' --force-recreate' }}
   args:
     chdir: "{{ repo_dest }}"
@@ -91,7 +144,7 @@
 
 - name: Force-recreate services whose bind-mounted config content Compose can't diff
   ansible.builtin.shell: >-
-    docker compose {{ compose_file_flags[compose_profile] }} -f compose.aws-override.yml
+    docker compose {{ compose_flags }} -f compose.aws-override.yml
     up -d --force-recreate {{ bind_mount_services | join(' ') }}
   args:
     chdir: "{{ repo_dest }}"

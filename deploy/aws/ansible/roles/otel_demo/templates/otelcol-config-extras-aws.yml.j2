@@ -89,6 +89,20 @@ receivers:
   # existing routing connector sends it to CloudWatch over OTLP/HTTP.
   fluent_forward/flagd:
     endpoint: 0.0.0.0:8006
+{% if enable_agent_layer | default(false) | bool %}
+  # agent/chatbot/mcp only export traces/metrics via Traceloop/OTel -- unlike
+  # every other service here, none of them bridge their own stdout (FastAPI/
+  # uvicorn/Gradio request logs) into an OTel Logs export. Same fix as flagd
+  # above: a dedicated Fluent Forward receiver per service (separate ports,
+  # since each needs its own service.name -- one shared receiver can't tell
+  # them apart without relying on undocumented Fluent-tag attribute names).
+  fluent_forward/agent:
+    endpoint: 0.0.0.0:8007
+  fluent_forward/chatbot:
+    endpoint: 0.0.0.0:8008
+  fluent_forward/mcp:
+    endpoint: 0.0.0.0:8009
+{% endif %}
 
 processors:
   # Adds the `ec2` detector on top of the base config's [env, docker, system]
@@ -148,6 +162,23 @@ processors:
       - key: service.name
         value: flagd
         action: upsert
+{% if enable_agent_layer | default(false) | bool %}
+  resource/agent_logs:
+    attributes:
+      - key: service.name
+        value: agent
+        action: upsert
+  resource/chatbot_logs:
+    attributes:
+      - key: service.name
+        value: chatbot
+        action: upsert
+  resource/mcp_logs:
+    attributes:
+      - key: service.name
+        value: mcp
+        action: upsert
+{% endif %}
   # Reduce CloudWatch's per-GB ingestion volume by removing resource metadata
   # that is constant, ephemeral, redundant, or only useful for SDK/runtime
   # debugging. This processor is wired only into the AWS metrics pipeline, so
@@ -547,6 +578,20 @@ service:
       receivers: [fluent_forward/flagd]
       processors: [memory_limiter, transform/sanitize_logs, resource/flagd_logs, resource/aws_application, resource/aws_deployment, groupbyattrs, batch/logs]
       exporters: [routing/cloudwatch_logs, count]
+{% if enable_agent_layer | default(false) | bool %}
+    logs/agent-stdout:
+      receivers: [fluent_forward/agent]
+      processors: [memory_limiter, transform/sanitize_logs, resource/agent_logs, resource/aws_application, resource/aws_deployment, groupbyattrs, batch/logs]
+      exporters: [routing/cloudwatch_logs, count]
+    logs/chatbot-stdout:
+      receivers: [fluent_forward/chatbot]
+      processors: [memory_limiter, transform/sanitize_logs, resource/chatbot_logs, resource/aws_application, resource/aws_deployment, groupbyattrs, batch/logs]
+      exporters: [routing/cloudwatch_logs, count]
+    logs/mcp-stdout:
+      receivers: [fluent_forward/mcp]
+      processors: [memory_limiter, transform/sanitize_logs, resource/mcp_logs, resource/aws_application, resource/aws_deployment, groupbyattrs, batch/logs]
+      exporters: [routing/cloudwatch_logs, count]
+{% endif %}
 {% for svc in log_stream_services %}
     logs/{{ svc }}:
       receivers: [routing/cloudwatch_logs]

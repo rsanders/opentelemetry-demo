@@ -38,10 +38,16 @@ services:
   otel-collector:
     # Docker's logging driver runs in the host daemon, outside the Compose
     # network, so it cannot reach the collector by service name. Publish the
-    # Fluent Forward receiver on loopback only; flagd's stdout enters here and
-    # leaves the collector through the existing OTLP/HTTP logs exporter.
+    # Fluent Forward receiver(s) on loopback only; flagd's (and, when enabled,
+    # agent/chatbot/mcp's) stdout enters here and leaves the collector through
+    # the existing OTLP/HTTP logs exporter.
     ports:
       - "127.0.0.1:8006:8006"
+{% if enable_agent_layer | default(false) | bool %}
+      - "127.0.0.1:8007:8007"
+      - "127.0.0.1:8008:8008"
+      - "127.0.0.1:8009:8009"
+{% endif %}
   frontend-proxy:
     ports:
       - "80:8080"
@@ -74,3 +80,42 @@ services:
         fluentd-async: "true"
         fluentd-sub-second-precision: "true"
         tag: "flagd"
+{% if enable_agent_layer | default(false) | bool %}
+  # None of these three images are published anywhere this deploy can reach
+  # (see ecr.tf); `make push-agentic-images` pushes them to these ECR repos
+  # instead. This whole block is only rendered when enable_agent_layer is
+  # true -- compose.agent.yaml (which defines these services in the first
+  # place) is only layered in on that same condition, and an override-only
+  # service block would otherwise start an orphaned, config-less container.
+  agent:
+    image: "{{ agent_image }}"
+    # None of the three emit OTel logs via SDK (unlike every other service
+    # here) -- route stdout through the collector's Fluent Forward receivers
+    # instead, same fix as flagd above, on their own ports/tags so each keeps
+    # its own service.name (see otelcol-config-extras-aws.yml.j2).
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: "tcp://127.0.0.1:8007"
+        fluentd-async: "true"
+        fluentd-sub-second-precision: "true"
+        tag: "agent"
+  chatbot:
+    image: "{{ chatbot_image }}"
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: "tcp://127.0.0.1:8008"
+        fluentd-async: "true"
+        fluentd-sub-second-precision: "true"
+        tag: "chatbot"
+  mcp:
+    image: "{{ mcp_image }}"
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: "tcp://127.0.0.1:8009"
+        fluentd-async: "true"
+        fluentd-sub-second-precision: "true"
+        tag: "mcp"
+{% endif %}

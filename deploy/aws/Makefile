@@ -21,7 +21,7 @@ COMPOSE := docker compose $(COMPOSE_FILES_$(or $(COMPOSE_PROFILE),core)) -f comp
 # $(1) extra ssh flags, $(2) the command to run in the repo directory.
 remote = cd $(TF_DIR) && bash -c "$$(terraform output -raw ssh_command) $(1) 'cd $(REPO_DEST) && $(2)'"
 
-.PHONY: fmt validate plan up update update-fast down outputs status status-all restart logs shell otelcol-config ssh ssm
+.PHONY: fmt validate plan up update update-fast down outputs status status-all restart logs shell otelcol-config ssh ssm push-agentic-images
 
 fmt: ## Format the Terraform files
 	cd $(TF_DIR) && terraform fmt -recursive
@@ -94,3 +94,23 @@ ssh: ## SSH into the demo instance
 
 ssm: ## Open a Session Manager shell on the demo instance (no SSH key/open port needed)
 	cd $(TF_DIR) && bash -c "$$(terraform output -raw ssm_command)"
+
+# Neither GHCR (upstream can't publish agent/chatbot/mcp from a fork; upstream
+# itself never publishes them either) nor any registry this deploy can reach
+# has these three images, so they're built and pushed here -- once, or after
+# any change under src/agent|chatbot|mcp -- rather than on every `make update`.
+# Requires enable_agent_layer = true to have been applied first (creates the
+# ECR repos these outputs point at) and the operator's own AWS credentials to
+# have ECR push rights. Builds for linux/amd64 explicitly via buildx: the
+# instance is a t3.xlarge (x86_64), which won't match an arm64 image built
+# natively on an Apple Silicon workstation.
+push-agentic-images: ## Build and push the agent/chatbot/mcp images to ECR (run once, or after changing src/agent|chatbot|mcp)
+	@region=$$(cd $(TF_DIR) && terraform output -raw region); \
+	registry=$$(cd $(TF_DIR) && terraform output -raw ecr_registry_host); \
+	agent_repo=$$(cd $(TF_DIR) && terraform output -raw agent_repo_url); \
+	chatbot_repo=$$(cd $(TF_DIR) && terraform output -raw chatbot_repo_url); \
+	mcp_repo=$$(cd $(TF_DIR) && terraform output -raw mcp_repo_url); \
+	aws ecr get-login-password --region "$$region" | docker login --username AWS --password-stdin "$$registry" && \
+	docker buildx build --platform linux/amd64 -f ../../src/agent/Dockerfile -t "$$agent_repo:latest" --push ../.. && \
+	docker buildx build --platform linux/amd64 -f ../../src/chatbot/Dockerfile -t "$$chatbot_repo:latest" --push ../.. && \
+	docker buildx build --platform linux/amd64 -f ../../src/mcp/Dockerfile -t "$$mcp_repo:latest" --push ../..

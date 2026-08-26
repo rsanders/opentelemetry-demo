@@ -64,3 +64,28 @@ variable "compose_profile" {
     error_message = "compose_profile must be either \"core\" or \"full\"."
   }
 }
+
+variable "enable_agent_layer" {
+  description = "Whether to layer compose.agent.yaml on top of compose_profile, starting the agent/mcp/chatbot GenAI services. Requires llm_base_url, llm_model, and llm_api_key to be set. Independent of compose_profile since the agent layer can sit on top of either \"core\" or \"full\"."
+  type        = bool
+  default     = false
+}
+
+variable "llm_base_url" {
+  description = "OpenAI-compatible Chat Completions base URL the agent service talks to (e.g. https://api.openai.com/v1, or an Azure OpenAI endpoint that supports the OpenAI v1 API surface). Only used when enable_agent_layer = true. The agent's LLM client only ever speaks the OpenAI-compatible API -- there is no Bedrock or LiteLLM-proxy support in this repo."
+  type        = string
+  default     = ""
+}
+
+variable "llm_model" {
+  description = "Model name passed to the agent's OpenAI-compatible client (e.g. gpt-4o, or an Azure deployment name). Only used when enable_agent_layer = true."
+  type        = string
+  default     = ""
+}
+
+variable "llm_api_key" {
+  description = "API key for llm_base_url. Stored in AWS Secrets Manager (see secrets.tf) and read by the instance's own IAM role at deploy time -- never written to terraform.tfvars.example, the rsynced repo copy, or the compose .env file. Set in your gitignored terraform.tfvars. Only used when enable_agent_layer = true."
+  type        = string
+  default     = ""
+  sensitive   = true
+}

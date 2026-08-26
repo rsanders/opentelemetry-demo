@@ -1,0 +1,34 @@
+# Copyright The OpenTelemetry Authors
+# SPDX-License-Identifier: Apache-2.0
+
+file_format: definition/2
+attribute_groups:
+  - id: service.agent
+    visibility: public
+    brief: Agent service attributes (LangGraph ReAct agent, GenAI operations)
+    stability: development
+    attributes:
+      - ref: gen_ai.provider.name
+      - ref: gen_ai.operation.name
+      - ref: gen_ai.request.model
+      - ref: gen_ai.response.model
+      - ref: gen_ai.response.id
+      - ref: gen_ai.response.finish_reasons
+      - ref: gen_ai.input.messages
+      - ref: gen_ai.output.messages
+      - ref: gen_ai.system_instructions
+      - ref: gen_ai.agent.name
+      - ref: gen_ai.agent.id
+      - ref: gen_ai.tool.name
+      - ref: gen_ai.tool.description
+      - ref: gen_ai.tool.type
+      - ref: gen_ai.tool.call.arguments
+      - ref: gen_ai.tool.call.result
+      - ref: gen_ai.tool.definitions
+      # LangGraph/Traceloop also emit gen_ai.task.* and gen_ai.workflow.* on
+      # graph-step spans (execute_task/invoke_agent operations) -- an
+      # OpenLLMetry convention the gen_ai_normalizer processor passes through
+      # unmodified. Not yet part of upstream semconv 1.40.0 (weaver check
+      # fails to resolve them), so left undeclared here rather than invented
+      # under the demo.* namespace, which is reserved for genuinely
+      # demo-specific attributes, not third-party convention gaps.

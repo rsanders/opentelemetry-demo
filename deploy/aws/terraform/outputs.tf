@@ -27,3 +27,28 @@ output "alerts_topic_arn" {
   description = "SNS topic CloudWatch alarms notify on instance/service downtime, if alert_email is set. Check the subscribed email for a confirmation link -- alerts don't arrive until it's clicked."
   value       = try(aws_sns_topic.alerts[0].arn, null)
 }
+
+output "region" {
+  description = "AWS region this deploy is in. Consumed by `make push-agentic-images` to log in to ECR without hardcoding it."
+  value       = var.region
+}
+
+output "ecr_registry_host" {
+  description = "ECR registry hostname for this account/region, e.g. <account_id>.dkr.ecr.<region>.amazonaws.com. Null unless enable_agent_layer = true."
+  value       = try(regex("^[^/]+", values(aws_ecr_repository.agentic)[0].repository_url), null)
+}
+
+output "agent_repo_url" {
+  description = "ECR repository URL for the agent service image. Null unless enable_agent_layer = true."
+  value       = try(aws_ecr_repository.agentic["agent"].repository_url, null)
+}
+
+output "chatbot_repo_url" {
+  description = "ECR repository URL for the chatbot service image. Null unless enable_agent_layer = true."
+  value       = try(aws_ecr_repository.agentic["chatbot"].repository_url, null)
+}
+
+output "mcp_repo_url" {
+  description = "ECR repository URL for the mcp service image. Null unless enable_agent_layer = true."
+  value       = try(aws_ecr_repository.agentic["mcp"].repository_url, null)
+}
