@@ -8,6 +8,7 @@ import os
 import httpx
 from langchain_openai import ChatOpenAI
 from src.agents.patch_vcr import VCR
+from src.agents.telemetry import record_token_usage
 
 
 class ChatLLM(ChatOpenAI):
@@ -36,11 +37,21 @@ class ChatLLM(ChatOpenAI):
     def _generate(self, messages, stop=None, run_manager=None, **kwargs):
         if getattr(self, "_use_vcr", False):
             with VCR.use_cassette(self._cassette_name):
-                return super()._generate(messages, stop, run_manager, **kwargs)
-        return super()._generate(messages, stop, run_manager, **kwargs)
+                result = super()._generate(messages, stop, run_manager, **kwargs)
+        else:
+            result = super()._generate(messages, stop, run_manager, **kwargs)
+        record_token_usage(result, self.model_name)
+        return result
 
     async def _agenerate(self, messages, stop=None, run_manager=None, **kwargs):
         if getattr(self, "_use_vcr", False):
             with VCR.use_cassette(self._cassette_name):
-                return await super()._agenerate(messages, stop, run_manager, **kwargs)
-        return await super()._agenerate(messages, stop, run_manager, **kwargs)
+                result = await super()._agenerate(
+                    messages, stop, run_manager, **kwargs
+                )
+        else:
+            result = await super()._agenerate(
+                messages, stop, run_manager, **kwargs
+            )
+        record_token_usage(result, self.model_name)
+        return result

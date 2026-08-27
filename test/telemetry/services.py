@@ -28,9 +28,8 @@ SIGNAL_MATRIX = {
     "accounting": {"traces": True, "metrics": True, "logs": True},
     "fraud-detection": {"traces": True, "metrics": True, "logs": True},
     "load-generator": {"traces": True, "metrics": True, "logs": True},
-    # Agentic services (compose.agent.yaml only): traces via Traceloop SDK /
-    # OTel SDK; no OTLP metrics or log exporters configured.
-    "agent":   {"traces": True, "metrics": False, "logs": False},
+    # Agentic services (compose.agent.yaml only).
+    "agent":   {"traces": True, "metrics": True, "logs": True},
     "mcp":     {"traces": True, "metrics": False, "logs": False},
     "chatbot": {"traces": True, "metrics": False, "logs": False},
 }

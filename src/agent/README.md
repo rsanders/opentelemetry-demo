@@ -12,7 +12,7 @@ The Agent service provides an AI assistant for the OpenTelemetry Astronomy Shop
 - Agent framework: LangChain and LangGraph prebuilt components
 - LLM client: `langchain_openai.ChatOpenAI` and support non OpenAI models via
 LiteLLM Client
-- Observability: Traceloop SDK and OpenTelemetry OTLP export
+- Observability: OpenTelemetry traces, metrics, and logs exported over OTLP
 - Optional tool source: Model Context Protocol (MCP)
 - Default port: `8010`
 
@@ -79,6 +79,7 @@ through Docker Compose, `.env`, `.env.override`, or the local shell environment.
 | `OTEL_EXPORTER_OTLP_INSECURE` | unset | Set to `true` in Compose for insecure local OTLP export. |
 | `OTEL_RESOURCE_ATTRIBUTES` | inherited | Additional OpenTelemetry resource attributes. |
 | `OTEL_SERVICE_NAME` | `AstronomyShopAgent` | Service name used in telemetry. |
+| `GEN_AI_PROVIDER_NAME` | `openai` | Value used for `gen_ai.provider.name`; override it when the OpenAI-compatible endpoint represents another provider. |
 
 > Do not commit real API keys. Prefer local overrides or secret management for `API_KEY`.
 > Note that VCR file is created using `LLM_MODEL` and is case sensitive.
@@ -138,10 +139,17 @@ Tools are loaded dynamically using `langchain_mcp_adapters.tools.load_mcp_tools`
 
 ## Observability
 
-`run.py` initializes Traceloop with:
+`run.py` initializes Traceloop and OpenTelemetry SDK providers with:
 
 - Application name: `agent`
-- API endpoint: `OTEL_EXPORTER_OTLP_ENDPOINT`, defaulting to `localhost:4317`
+- Trace endpoint: `TRACELOOP_BASE_URL`, defaulting to `http://localhost:4318`
+- Metrics/logs endpoint: `OTEL_EXPORTER_OTLP_ENDPOINT`, defaulting to `localhost:4317`
+
+Each model call reports provider/model and input/output token usage as:
+
+- `gen_ai.usage.input_tokens` and `gen_ai.usage.output_tokens` on GenAI spans
+- `gen_ai.client.token.usage`, split by `gen_ai.token.type`, as an OTLP metric
+- `gen_ai.client.inference.operation.details` as a trace-correlated OTLP log event
 
 The `run_agent` method is decorated as a Traceloop workflow named:
 

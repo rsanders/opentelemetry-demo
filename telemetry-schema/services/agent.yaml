@@ -10,10 +10,15 @@ attribute_groups:
     attributes:
       - ref: gen_ai.provider.name
       - ref: gen_ai.operation.name
+      - ref: server.address
+      - ref: server.port
       - ref: gen_ai.request.model
       - ref: gen_ai.response.model
       - ref: gen_ai.response.id
       - ref: gen_ai.response.finish_reasons
+      - ref: gen_ai.usage.input_tokens
+      - ref: gen_ai.usage.output_tokens
+      - ref: gen_ai.token.type
       - ref: gen_ai.input.messages
       - ref: gen_ai.output.messages
       - ref: gen_ai.system_instructions
