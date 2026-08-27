@@ -10,12 +10,23 @@ const BASE_URL = __ENV.K6_TARGET_URL || 'http://frontend-proxy:8080'
 const FLAGD_HOST = __ENV.FLAGD_HOST || 'flagd'
 const FLAGD_OFREP_PORT = __ENV.FLAGD_OFREP_PORT || '8016'
 
+// agent and mcp have no route through frontend-proxy (only chatbot does, at
+// /chatbot/ - see src/frontend-proxy/envoy.tmpl.yaml), so they're reached
+// directly by their in-network service names, the same way FLAGD_HOST is.
+const AGENT_URL = `http://${__ENV.AGENT_ENDPOINT || 'agent'}:${__ENV.AGENT_PORT || '8010'}/prompt`
+const MCP_URL = `http://${__ENV.MCP_ENDPOINT || 'mcp'}:${__ENV.MCP_PORT || '8011'}/mcp`
+
 // The HTTP scenario's VU count is read from LOAD_GENERATOR_VUS rather than
 // k6's own K6_VUS, since a K6_VUS env var makes k6 discard this script's
 // scenarios config entirely in favor of an implicit single scenario (see
 // README.md). The browser scenario runs a single headless browser session
 // alongside the HTTP traffic; it stays opt-in via K6_BROWSER_ENABLED.
 const browserEnabled = (__ENV.K6_BROWSER_ENABLED || '').toLowerCase() === 'true'
+
+// Opt-in: only set (by compose.agent.yaml) when the agent/mcp/chatbot layer
+// is actually deployed alongside the load generator - see
+// src/load-generator/README.md#agent-layer-traffic.
+const agentLayerEnabled = (__ENV.K6_AGENT_LAYER_ENABLED || '').toLowerCase() === 'true'
 
 export const options = {
     scenarios: {
@@ -39,6 +50,47 @@ export const options = {
                     },
                 },
             },
+        } : {}),
+        // constant-arrival-rate (rather than constant-vus) targets a fixed
+        // number of iterations/minute regardless of how long each call
+        // takes, which is what "no more than N requests/min" actually means
+        // for slow, LLM-backed calls.
+        ...(agentLayerEnabled ? {
+            agent: {
+                executor: 'constant-arrival-rate',
+                exec: 'agentScenario',
+                rate: parseInt(__ENV.AGENT_TARGET_RPM || '5'),
+                timeUnit: '1m',
+                duration: __ENV.K6_DURATION || '9999h',
+                preAllocatedVUs: 2,
+                maxVUs: 4,
+            },
+            mcp: {
+                executor: 'constant-arrival-rate',
+                exec: 'mcpScenario',
+                rate: parseInt(__ENV.MCP_TARGET_RPM || '5'),
+                timeUnit: '1m',
+                duration: __ENV.K6_DURATION || '9999h',
+                preAllocatedVUs: 1,
+                maxVUs: 2,
+            },
+            ...(browserEnabled ? {
+                chatbot: {
+                    executor: 'constant-arrival-rate',
+                    exec: 'chatbotScenario',
+                    rate: parseInt(__ENV.CHATBOT_TARGET_RPM || '5'),
+                    timeUnit: '1m',
+                    duration: __ENV.K6_DURATION || '9999h',
+                    preAllocatedVUs: 1,
+                    maxVUs: 2,
+                    options: {
+                        browser: {
+                            type: 'chromium',
+                            headless: true,
+                        },
+                    },
+                },
+            } : {}),
         } : {}),
     },
 }
@@ -270,6 +322,106 @@ export function httpScenario() {
     sleep(cryptoRandom() * 9 + 1)  // mirrors Locust between(1, 10)
 }
 
+// ---- agent layer tasks -------------------------------------------------------
+// See src/load-generator/README.md#agent-layer-traffic. These run as their
+// own constant-arrival-rate scenarios (see `options.scenarios` above), not
+// through selectTask, so each one paces itself independently.
+
+const agentQuestions = [
+    'Show all available products in the store.',
+    'What currencies are supported by the Astronomy Shop?',
+    'What current promotions are available on binoculars?',
+]
+
+export function agentScenario() {
+    if (getFlagdValue('loadGeneratorTraffic') <= 0) return
+
+    const message = randomChoice(agentQuestions)
+    const span = tracer.startSpan('user_agent_prompt')
+    span.log(`Asking agent: ${message}`)
+    http.post(
+        AGENT_URL,
+        JSON.stringify({ message, history: [] }),
+        {
+            headers: otelHeaders(span.traceParent(), { 'Content-Type': 'application/json' }),
+            timeout: '60s',  // real LLM call, not a simple API round trip
+        }
+    )
+    span.end()
+}
+
+// Minimal JSON-RPC client for the MCP streamable-HTTP transport (see
+// https://modelcontextprotocol.io), verified by hand against this repo's
+// FastMCP-based mcp service: an `initialize` call returns the negotiated
+// session in an `Mcp-Session-Id` response header, which then has to be
+// echoed back on an `initialized` notification and on every following call.
+const MCP_PROTOCOL_VERSION = '2025-06-18'
+
+function mcpHeaders(traceParent, sessionId) {
+    const headers = otelHeaders(traceParent, {
+        'Content-Type': 'application/json',
+        Accept: 'application/json, text/event-stream',
+    })
+    if (sessionId) {
+        headers['Mcp-Session-Id'] = sessionId
+        headers['MCP-Protocol-Version'] = MCP_PROTOCOL_VERSION
+    }
+    return headers
+}
+
+function mcpSessionId(res) {
+    for (const key in res.headers || {}) {
+        if (key.toLowerCase() === 'mcp-session-id') return res.headers[key]
+    }
+    return undefined
+}
+
+function mcpCallTool(traceParent, toolName, args) {
+    const initRes = http.post(
+        MCP_URL,
+        JSON.stringify({
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'initialize',
+            params: {
+                protocolVersion: MCP_PROTOCOL_VERSION,
+                capabilities: {},
+                clientInfo: { name: 'k6-load-generator', version: '1.0' },
+            },
+        }),
+        { headers: mcpHeaders(traceParent), timeout: '30s' }
+    )
+
+    const sessionId = mcpSessionId(initRes)
+    if (initRes.status !== 200 || !sessionId) return
+
+    http.post(
+        MCP_URL,
+        JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }),
+        { headers: mcpHeaders(traceParent, sessionId), timeout: '30s' }
+    )
+
+    http.post(
+        MCP_URL,
+        JSON.stringify({
+            jsonrpc: '2.0',
+            id: 2,
+            method: 'tools/call',
+            params: { name: toolName, arguments: args || {} },
+        }),
+        { headers: mcpHeaders(traceParent, sessionId), timeout: '30s' }
+    )
+}
+
+export function mcpScenario() {
+    if (getFlagdValue('loadGeneratorTraffic') <= 0) return
+
+    const span = tracer.startSpan('user_mcp_tool_call', { 'mcp.tool.name': 'list_products' })
+    span.log('Calling MCP tool: list_products')
+    mcpCallTool(span.traceParent(), 'list_products', {})
+    span.end()
+}
+
 // ---- browser tasks ----------------------------------------------------------
 
 async function changeCurrency(page) {
@@ -320,4 +472,39 @@ export async function browserScenario() {
     }
 
     sleep(cryptoRandom() * 9 + 1)
+}
+
+// Drives the chatbot's Gradio UI like a real visitor rather than calling its
+// internal API directly, since Gradio doesn't expose a stable public REST
+// contract for that the way agent's/mcp's own APIs do. Targets the textbox
+// by its placeholder (ours, set in src/chatbot's chat_interface.py) rather
+// than the per-render example-question buttons, which is more robust to
+// Gradio DOM/version changes.
+async function askChatbot(page, question) {
+    await page.goto(`${BASE_URL}/chatbot/`, { waitUntil: 'domcontentloaded' })
+    const input = 'textarea[placeholder="Type a message..."]'
+    await page.waitForSelector(input, { timeout: 15000 })
+    await page.fill(input, question)
+    await page.press(input, 'Enter')
+    // No DOM signal here is reliably version-stable enough to await; give
+    // the agent call behind it time to finish instead.
+    await page.waitForTimeout(15000)
+}
+
+export async function chatbotScenario() {
+    if (getFlagdValue('loadGeneratorTraffic') <= 0) return
+
+    const question = randomChoice(agentQuestions)
+    const page = await browser.newPage()
+    const span = tracer.startSpan('user_chatbot_prompt', { 'chatbot.question': question })
+    try {
+        await page.setExtraHTTPHeaders({ baggage: 'synthetic_request=true' })
+        span.log(`Asking chatbot: ${question}`)
+        await askChatbot(page, question)
+    } catch (e) {
+        console.error(`chatbot task error: ${e}`)
+    } finally {
+        span.end()
+        await page.close()
+    }
 }

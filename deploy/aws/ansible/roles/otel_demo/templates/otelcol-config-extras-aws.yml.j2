@@ -19,7 +19,7 @@
   'ad', 'cart', 'checkout', 'currency', 'email', 'frontend', 'frontend-proxy',
   'image-provider', 'load-generator', 'payment', 'product-catalog', 'quote',
   'recommendation', 'shipping', 'flagd', 'flagd-ui', 'telemetry-docs',
-] %}
+] + (['agent', 'chatbot', 'mcp'] if enable_agent_layer | default(false) | bool else []) %}
 
 extensions:
   # Signs requests to the CloudWatch metrics OTLP endpoint. Credentials come

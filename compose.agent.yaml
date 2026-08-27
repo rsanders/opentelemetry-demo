@@ -132,3 +132,24 @@ services:
     depends_on:
       chatbot:
         condition: service_started
+
+  # Patch load-generator to exercise the agent/mcp/chatbot layer at a low,
+  # configurable rate (see src/load-generator/README.md) once those services
+  # are present.
+  load-generator:
+    environment:
+      - K6_AGENT_LAYER_ENABLED=true
+      - AGENT_ENDPOINT
+      - AGENT_PORT
+      - MCP_ENDPOINT
+      - MCP_PORT
+      - AGENT_TARGET_RPM
+      - MCP_TARGET_RPM
+      - CHATBOT_TARGET_RPM
+    depends_on:
+      agent:
+        condition: service_started
+      mcp:
+        condition: service_started
+      chatbot:
+        condition: service_started

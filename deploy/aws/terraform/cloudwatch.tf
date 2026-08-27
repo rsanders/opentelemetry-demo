@@ -25,11 +25,12 @@ resource "aws_cloudwatch_log_group" "app" {
 # additional ansible stream below is written by the controller callback, not
 # the collector; other remains the collector's catch-all stream.
 locals {
-  log_stream_services = [
+  log_stream_services = concat([
     "ad", "cart", "checkout", "currency", "email", "frontend", "frontend-proxy",
     "image-provider", "load-generator", "payment", "product-catalog", "quote",
     "recommendation", "shipping", "flagd", "flagd-ui", "telemetry-docs",
-  ]
+    ], var.enable_agent_layer ? ["agent", "chatbot", "mcp"] : []
+  )
 }
 
 resource "aws_cloudwatch_log_stream" "app" {

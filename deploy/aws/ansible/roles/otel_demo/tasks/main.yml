@@ -136,7 +136,7 @@
   # bind_mount_services task below to catch what that diff can't see.
   ansible.builtin.shell: >-
     docker compose {{ compose_flags }} -f compose.aws-override.yml
-    up -d --remove-orphans{{ '' if fast_update else ' --force-recreate' }}
+    up -d --remove-orphans{{ '' if (fast_update | bool) else ' --force-recreate' }}
   args:
     chdir: "{{ repo_dest }}"
   become_user: ec2-user
@@ -150,4 +150,4 @@
     chdir: "{{ repo_dest }}"
   become_user: ec2-user
   environment: "{{ compose_environment }}"
-  when: fast_update
+  when: fast_update | bool
