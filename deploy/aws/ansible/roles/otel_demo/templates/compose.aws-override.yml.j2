@@ -51,6 +51,9 @@ services:
   frontend:
     environment:
       - PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=/otlp-http/v1/traces
+  recommendation:
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/${RECOMMENDATION_PORT}"]
   frontend-proxy:
     ports:
       - "80:8080"
