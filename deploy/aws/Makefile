@@ -15,13 +15,15 @@ EXEC_SHELL ?= /bin/sh
 COMPOSE_FILES_core := -f compose.yaml
 COMPOSE_FILES_full := -f compose.yaml -f compose.full.yaml
 COMPOSE_PROFILE := $(shell awk -F= '/^compose_profile=/{print $$2}' $(ANSIBLE_DIR)/inventory.ini 2>/dev/null)
-COMPOSE := docker compose $(COMPOSE_FILES_$(or $(COMPOSE_PROFILE),core)) -f compose.aws-override.yml
+ENABLE_AGENT_LAYER := $(shell awk -F= '/^enable_agent_layer=/{print $$2}' $(ANSIBLE_DIR)/inventory.ini 2>/dev/null)
+COMPOSE_AGENT_FILE := $(if $(filter true,$(ENABLE_AGENT_LAYER)),-f compose.agent.yaml)
+COMPOSE := docker compose $(COMPOSE_FILES_$(or $(COMPOSE_PROFILE),core)) $(COMPOSE_AGENT_FILE) -f compose.aws-override.yml
 
 # Runs a command on the instance over the Terraform-generated SSH key.
 # $(1) extra ssh flags, $(2) the command to run in the repo directory.
 remote = cd $(TF_DIR) && bash -c "$$(terraform output -raw ssh_command) $(1) 'cd $(REPO_DEST) && $(2)'"
 
-.PHONY: fmt validate plan up update update-fast down outputs status status-all restart stop logs shell otelcol-config ssh ssm push-agentic-images
+.PHONY: fmt validate plan up update update-fast down outputs status status-all restart stop chatbot-off chatbot-on logs shell otelcol-config ssh ssm push-agentic-images
 
 fmt: ## Format the Terraform files
 	cd $(TF_DIR) && terraform fmt -recursive
@@ -76,6 +78,12 @@ restart: ## Restart every container on the instance without re-provisioning
 
 stop: ## Stop the load generator, leaving the rest of the stack running
 	@$(call remote,,$(COMPOSE) stop load-generator)
+
+chatbot-off: ## Stop the chatbot, leaving the rest of the stack running
+	@$(call remote,,$(COMPOSE) stop chatbot)
+
+chatbot-on: ## Start the stopped chatbot container
+	@$(call remote,,$(COMPOSE) start chatbot)
 
 logs: ## Tail one service's container logs (SERVICE=cart)
 	@$(call remote,-t,$(COMPOSE) logs --follow --tail=100 $(SERVICE))
