@@ -17,7 +17,7 @@ services:
           memory: 450M
   load-generator:
     environment:
-      - K6_OTEL_TRACES_ENABLED=false
+      - K6_OTEL_TRACES_ENABLED=true
       - K6_LOG_LEVEL=warn
     deploy:
       resources:
