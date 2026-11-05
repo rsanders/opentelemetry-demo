@@ -48,6 +48,9 @@ services:
       - "127.0.0.1:8008:8008"
       - "127.0.0.1:8009:8009"
 {% endif %}
+  frontend:
+    environment:
+      - PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=/otlp-http/v1/traces
   frontend-proxy:
     ports:
       - "80:8080"
