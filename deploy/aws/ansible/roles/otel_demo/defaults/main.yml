@@ -14,13 +14,17 @@ compose_environment:
 # Services with a local Dockerfile that must win over "Pull compose images":
 # ad/otel-collector wrap a pulled public image with a small deployment-specific
 # layer (their Dockerfile uses that image as a base without rebuilding the
-# application from source); load-generator's script.js has been extended
+# application from source); payment and frontend-proxy are built from the
+# synchronized checkout so their runtime dependencies and Envoy template stay
+# aligned with compose.yaml; load-generator's script.js has been extended
 # with agent/mcp/chatbot scenarios (see src/load-generator/README.md) that
 # don't exist in the upstream ghcr.io image `pull` would otherwise fetch, so
 # it needs a full local build to actually take effect.
 locally_extended_services:
   - ad
   - otel-collector
+  - payment
+  - frontend-proxy
   - load-generator
 
 # Services that bind-mount config files by host path (see compose.yaml):
