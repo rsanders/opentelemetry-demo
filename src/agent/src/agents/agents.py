@@ -50,8 +50,12 @@ class Agent:
         mcp_enabled = os.getenv("MCP_ENABLED", "False") == "True"
         if mcp_enabled:
             logging.info("MCP tools enabled")
-            self.mcp_server = MCPClient()
-            await self.mcp_server.connect_to_mcp_server(self.mcp_server_url)
+            self.mcp_server = MCPClient(self.mcp_server_url)
+            try:
+                await self.mcp_server.connect_to_mcp_server()
+            except Exception as e:
+                logging.error(f"MCP server unavailable at startup: {e}")
+                await self.mcp_server.cleanup()
         yield
         if self.mcp_server:
             await self.mcp_server.cleanup()
@@ -62,7 +66,12 @@ class Agent:
     async def get_tool_list(self):
         mcp_enabled = os.getenv("MCP_ENABLED", "False") == "True"
         if mcp_enabled and self.mcp_server is not None:
-            return await load_mcp_tools(self.mcp_server.session)
+            try:
+                return await load_mcp_tools(await self.mcp_server.ensure_session())
+            except Exception as e:
+                logging.warning(f"MCP session failed, reconnecting: {e}")
+                await self.mcp_server.reconnect()
+                return await load_mcp_tools(self.mcp_server.session)
         else:
             tool_list = [
                 add_to_cart,

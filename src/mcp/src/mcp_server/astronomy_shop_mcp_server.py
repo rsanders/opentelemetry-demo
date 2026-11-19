@@ -37,4 +37,6 @@ class AstronomyShopMcp:
     def run(self):
         """Start the MCP server using http stream transport."""
         logger.info(f"Starting FastMCP Server on {self.host}:{self.port}")
-        self.mcp.run(transport="http", host=self.host, port=self.port)
+        self.mcp.run(
+            transport="http", host=self.host, port=self.port, stateless_http=True
+        )

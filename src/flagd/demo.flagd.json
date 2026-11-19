@@ -42,6 +42,15 @@
         "off": 0
       }
     },
+    "cartMetricCardinalityOverflow": {
+      "defaultVariant": "off",
+      "description": "Overflows cart service metric attribute cardinality",
+      "state": "ENABLED",
+      "variants": {
+        "off": false,
+        "on": true
+      }
+    },
     "emailMemoryLeak": {
       "defaultVariant": "off",
       "description": "Memory leak in the email service.",
@@ -53,6 +62,15 @@
         "10x": 10,
         "1x": 1,
         "off": 0
+      }
+    },
+    "emitRawPii": {
+      "defaultVariant": "off",
+      "description": "Emit raw PII in telemetry",
+      "state": "ENABLED",
+      "variants": {
+        "off": false,
+        "on": true
       }
     },
     "failedReadinessProbe": {
@@ -139,6 +157,15 @@
     "paymentUnreachable": {
       "defaultVariant": "off",
       "description": "Payment service is unavailable",
+      "state": "ENABLED",
+      "variants": {
+        "off": false,
+        "on": true
+      }
+    },
+    "productCatalogLockContention": {
+      "defaultVariant": "off",
+      "description": "Triggers lock contention in the product catalog service",
       "state": "ENABLED",
       "variants": {
         "off": false,
