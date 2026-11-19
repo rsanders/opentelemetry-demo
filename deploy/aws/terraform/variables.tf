@@ -74,17 +74,17 @@ variable "enable_agent_layer" {
 variable "llm_base_url" {
   description = "OpenAI-compatible Chat Completions base URL the agent service talks to (e.g. https://api.openai.com/v1, or an Azure OpenAI endpoint that supports the OpenAI v1 API surface). Only used when enable_agent_layer = true. The agent's LLM client only ever speaks the OpenAI-compatible API -- there is no Bedrock or LiteLLM-proxy support in this repo."
   type        = string
-  default     = ""
+  default     = "https://api.openai.com/v1"
 }
 
 variable "llm_model" {
-  description = "Model name passed to the agent's OpenAI-compatible client (e.g. gpt-4o, or an Azure deployment name). Only used when enable_agent_layer = true."
+  description = "Model name passed to the agent's OpenAI-compatible client (e.g. gpt-4o, or an Azure deployment name). The default gpt-5-nano matches the shipped VCR cassette; any other value has no cassette and every request goes to llm_base_url. Only used when enable_agent_layer = true."
   type        = string
-  default     = ""
+  default     = "gpt-5-nano"
 }
 
 variable "llm_use_vcr" {
-  description = "Whether the agent replays recorded LLM responses from its VCR cassettes (USE_VCR). Cassettes are named after llm_model (src/agent/fixtures/vcr_cassettes), so only a model with a shipped cassette replays fully; requests with no match go to llm_base_url and are recorded. Only used when enable_agent_layer = true."
+  description = "Whether the agent replays recorded LLM responses from its VCR cassettes (USE_VCR). Cassettes are named after llm_model (src/agent/fixtures/vcr_cassettes), so only a model with a shipped cassette replays; a request with no match goes to llm_base_url, and the reply is recorded in the running container. Only used when enable_agent_layer = true."
   type        = bool
   default     = true
 }
