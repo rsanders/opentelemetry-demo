@@ -83,6 +83,12 @@ variable "llm_model" {
   default     = ""
 }
 
+variable "llm_use_vcr" {
+  description = "Whether the agent replays recorded LLM responses from its VCR cassettes (USE_VCR). Cassettes are named after llm_model (src/agent/fixtures/vcr_cassettes), so only a model with a shipped cassette replays fully; requests with no match go to llm_base_url and are recorded. Only used when enable_agent_layer = true."
+  type        = bool
+  default     = true
+}
+
 variable "llm_api_key" {
   description = "API key for llm_base_url. Stored in AWS Secrets Manager (see secrets.tf) and read by the instance's own IAM role at deploy time -- never written to terraform.tfvars.example, the rsynced repo copy, or the compose .env file. Set in your gitignored terraform.tfvars. Only used when enable_agent_layer = true."
   type        = string

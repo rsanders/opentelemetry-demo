@@ -74,9 +74,8 @@
   changed_when: false
 
 - name: Merge the agent layer's LLM config into the compose environment
-  # USE_VCR=False forces real calls to llm_base_url instead of replaying the
-  # committed VCR cassettes -- the point of this layer is real GenAI
-  # telemetry. Shell env beats the repo's .env file in Compose's own
+  # llm_use_vcr (default true) replays the committed VCR cassettes; false
+  # forces real calls to llm_base_url. Shell env beats the repo's .env file in Compose's own
   # precedence, so this never needs writing the key to disk on the instance.
   when: enable_agent_layer | default(false) | bool
   no_log: true
@@ -86,7 +85,7 @@
       'OPENAI_API_KEY': llm_api_key_result.stdout,
       'LLM_BASE_URL': llm_base_url,
       'LLM_MODEL': llm_model,
-      'USE_VCR': 'False',
+      'USE_VCR': (llm_use_vcr | default(true) | bool | string),
       }) }}"
 
 - name: Log in to ECR for the agent/chatbot/mcp images

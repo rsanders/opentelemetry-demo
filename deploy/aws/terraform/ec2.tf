@@ -74,6 +74,7 @@ resource "local_file" "ansible_inventory" {
     enable_agent_layer     = var.enable_agent_layer
     llm_base_url           = var.llm_base_url
     llm_model              = var.llm_model
+    llm_use_vcr            = var.llm_use_vcr
     llm_api_key_secret_arn = try(aws_secretsmanager_secret.llm_api_key[0].arn, "")
     agent_image            = try("${aws_ecr_repository.agentic["agent"].repository_url}:latest", "")
     chatbot_image          = try("${aws_ecr_repository.agentic["chatbot"].repository_url}:latest", "")
