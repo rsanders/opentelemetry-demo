@@ -1,0 +1,780 @@
+interactions:
+- request:
+    body: !!binary |
+      Cs4oCskDCiIKFnRlbGVtZXRyeS5zZGsubGFuZ3VhZ2USCAoGcHl0aG9uCiUKEnRlbGVtZXRyeS5z
+      ZGsubmFtZRIPCg1vcGVudGVsZW1ldHJ5CiEKFXRlbGVtZXRyeS5zZGsudmVyc2lvbhIICgYxLjQz
+      LjAKIwoTc2VydmljZS5pbnN0YW5jZS5pZBIMCgoxNzk1MTA1ODEzCikKEXNlcnZpY2UubmFtZXNw
+      YWNlEhQKEm9wZW50ZWxlbWV0cnktZGVtbwokChtkZXBsb3ltZW50LmVudmlyb25tZW50Lm5hbWUS
+      BQoDZGV2CiMKC0FwcGxpY2F0aW9uEhQKEm9wZW50ZWxlbWV0cnktZGVtbwo9Cixhd3MuYXBwbGlj
+      YXRpb25fc2lnbmFscy5tZXRyaWNfcmVzb3VyY2Vfa2V5cxINCgtBcHBsaWNhdGlvbgpICg9zZXJ2
+      aWNlLnZlcnNpb24SNQozYTQzYjdlM2U3MDAyNTQ2ODViMzlhYTRlMmZhZWRhZTIzMzViYjhlMi0x
+      Nzk1MTA1ODAyChwKE3NlcnZpY2UuY3JpdGljYWxpdHkSBQoDbG93ChcKDHNlcnZpY2UubmFtZRIH
+      CgVhZ2VudBLdAQovCiVvcGVudGVsZW1ldHJ5Lmluc3RydW1lbnRhdGlvbi5mYXN0YXBpEgYwLjY0
+      YjASgAEKEEa+Vh+Rt3xUDc009U+Jd/kSCCqlxbFNC7g0Igg7Ee/KSY++CioZUE9TVCAvcHJvbXB0
+      IGh0dHAgcmVjZWl2ZTABOZwFHo9gf+kYQezlHo9gf+kYSiEKD2FzZ2kuZXZlbnQudHlwZRIOCgxo
+      dHRwLnJlcXVlc3R6AIUBAAEAABonaHR0cHM6Ly9vcGVudGVsZW1ldHJ5LmlvL3NjaGVtYXMvMS4x
+      MS4wEuwBCi0KI29wZW50ZWxlbWV0cnkuaW5zdHJ1bWVudGF0aW9uLmh0dHB4EgYwLjY0YjASkQEK
+      EJmFgdSOB9F0Xiu5xVSfkUUSCH2eaI0pFKhrKgRQT1NUMAM5CSgPkWB/6RhBIbBbkmB/6RhKFQoL
+      aHR0cC5tZXRob2QSBgoEUE9TVEohCghodHRwLnVybBIVChNodHRwOi8vbWNwOjgwMTEvbWNwShcK
+      EGh0dHAuc3RhdHVzX2NvZGUSAxjIAXoAhQEAAQAAGidodHRwczovL29wZW50ZWxlbWV0cnkuaW8v
+      c2NoZW1hcy8xLjExLjASsCEKOwoxb3BlbnRlbGVtZXRyeS5pbnN0cnVtZW50YXRpb24ubWNwLmlu
+      c3RydW1lbnRhdGlvbhIGMC42Mi4xEvAgChBGvlYfkbd8VA3NNPVPiXf5EghDifEXN+nXNiIIsV39
+      O5ClkK0qDnRvb2xzL2xpc3QubWNwMAE5tAf+kGB/6RhBpgaekmB/6RhKOgoXdHJhY2Vsb29wLndv
+      cmtmbG93Lm5hbWUSHwodYXN0cm9ub215X3Nob3BfYWdlbnRfd29ya2Zsb3dKQQoWdHJhY2Vsb29w
+      LmVudGl0eS5pbnB1dBInCiV7Im1ldGhvZCI6InRvb2xzL2xpc3QiLCJwYXJhbXMiOm51bGx9Spof
+      Chd0cmFjZWxvb3AuZW50aXR5Lm91dHB1dBL+Hgr7HnsibWV0YSI6bnVsbCwibmV4dEN1cnNvciI6
+      bnVsbCwidG9vbHMiOlt7Im5hbWUiOiJhZGRfdG9fY2FydCIsInRpdGxlIjpudWxsLCJkZXNjcmlw
+      dGlvbiI6IkFkZCBhIHByb2R1Y3QgKHByb2R1Y3RfaWQpIHRvIHRoZSBzaG9wcGluZyBjYXJ0IGZv
+      ciBhIHVzZXIgKHVzZXJfaWQpLiIsImlucHV0U2NoZW1hIjp7ImFkZGl0aW9uYWxQcm9wZXJ0aWVz
+      IjpmYWxzZSwicHJvcGVydGllcyI6eyJ1c2VyX2lkIjp7InR5cGUiOiJzdHJpbmcifSwicHJvZHVj
+      dF9pZCI6eyJ0eXBlIjoic3RyaW5nIn0sInF1YW50aXR5Ijp7ImRlZmF1bHQiOjEsInR5cGUiOiJp
+      bnRlZ2VyIn19LCJyZXF1aXJlZCI6WyJ1c2VyX2lkIiwicHJvZHVjdF9pZCJdLCJ0eXBlIjoib2Jq
+      ZWN0In0sIm91dHB1dFNjaGVtYSI6bnVsbCwiaWNvbnMiOm51bGwsImFubm90YXRpb25zIjpudWxs
+      LCJtZXRhIjp7ImZhc3RtY3AiOnsidGFncyI6W119fSwiZXhlY3V0aW9uIjpudWxsfSx7Im5hbWUi
+      OiJjaGVja291dCIsInRpdGxlIjpudWxsLCJkZXNjcmlwdGlvbiI6IkNoZWNrb3V0IHRoZSB1c2Vy
+      J3MgY2FydCBhbmQgY3JlYXRlIGFuIG9yZGVyLlxuVGFrZXMgcmVxdWVzdCBpbiB0aGUgZm9ybWF0
+      IHtzdHJpbmcgdXNlcl9pZCwgc3RyaW5nIHVzZXJDdXJyZW5jeSwgQWRkcmVzcyBhZGRyZXNzLCBz
+      dHJpbmcgZW1haWwsIENyZWRpdENhcmRJbmZvIGNyZWRpdENhcmR9XG5XaGVyZSBBZGRyZXNzIGlz
+      IHtzdHJpbmcgc3RyZWV0QWRkcmVzcywgc3RyaW5nIGNpdHksIHN0cmluZyBzdGF0ZSwgc3RyaW5n
+      IGNvdW50cnksIHN0cmluZyB6aXBDb2RlfSBhbmRcbkNyZWRpdENhcmRJbmZvIGlzIHtzdHJpbmcg
+      Y3JlZGl0Q2FyZE51bWJlciwgaW50MzIgY3JlZGl0Q2FyZEN2diwgaW50MzIgY3JlZGl0Q2FyZEV4
+      cGlyYXRpb25ZZWFyLCBpbnQzMiBjcmVkaXRDYXJkRXhwaXJhdGlvbk1vbnRofSIsImlucHV0U2No
+      ZW1hIjp7ImFkZGl0aW9uYWxQcm9wZXJ0aWVzIjpmYWxzZSwicHJvcGVydGllcyI6eyJjaGVja291
+      dF9wZXJzb24iOnt9fSwicmVxdWlyZWQiOlsiY2hlY2tvdXRfcGVyc29uIl0sInR5cGUiOiJvYmpl
+      Y3QifSwib3V0cHV0U2NoZW1hIjpudWxsLCJpY29ucyI6bnVsbCwiYW5ub3RhdGlvbnMiOm51bGws
+      Im1ldGEiOnsiZmFzdG1jcCI6eyJ0YWdzIjpbXX19LCJleGVjdXRpb24iOm51bGx9LHsibmFtZSI6
+      ImVtcHR5X2NhcnQiLCJ0aXRsZSI6bnVsbCwiZGVzY3JpcHRpb24iOiJFbXB0eSB0aGUgc2hvcHBp
+      bmcgY2FydCBmb3IgYSB1c2VyLiIsImlucHV0U2NoZW1hIjp7ImFkZGl0aW9uYWxQcm9wZXJ0aWVz
+      IjpmYWxzZSwicHJvcGVydGllcyI6eyJ1c2VyX2lkIjp7InR5cGUiOiJzdHJpbmcifX0sInJlcXVp
+      cmVkIjpbInVzZXJfaWQiXSwidHlwZSI6Im9iamVjdCJ9LCJvdXRwdXRTY2hlbWEiOm51bGwsImlj
+      b25zIjpudWxsLCJhbm5vdGF0aW9ucyI6bnVsbCwibWV0YSI6eyJmYXN0bWNwIjp7InRhZ3MiOltd
+      fX0sImV4ZWN1dGlvbiI6bnVsbH0seyJuYW1lIjoiZ2V0X2FkcyIsInRpdGxlIjpudWxsLCJkZXNj
+      cmlwdGlvbiI6IkZldGNoIHByb21vdGlvbmFsIGFkcyBmb3IgQXN0cm9ub215IFNob3AgaG9tZXBh
+      Z2UuXG5FZyA6IGNhdGVnb3J5OiBgdGVsZXNjb3Blc2Agb3IgYHRyYXZlbGAiLCJpbnB1dFNjaGVt
+      YSI6eyJhZGRpdGlvbmFsUHJvcGVydGllcyI6ZmFsc2UsInByb3BlcnRpZXMiOnsiY2F0ZWdvcnki
+      OnsidHlwZSI6InN0cmluZyJ9fSwicmVxdWlyZWQiOlsiY2F0ZWdvcnkiXSwidHlwZSI6Im9iamVj
+      dCJ9LCJvdXRwdXRTY2hlbWEiOm51bGwsImljb25zIjpudWxsLCJhbm5vdGF0aW9ucyI6bnVsbCwi
+      bWV0YSI6eyJmYXN0bWNwIjp7InRhZ3MiOltdfX0sImV4ZWN1dGlvbiI6bnVsbH0seyJuYW1lIjoi
+      Z2V0X2NhcnQiLCJ0aXRsZSI6bnVsbCwiZGVzY3JpcHRpb24iOiJSZXRyaWV2ZSB0aGUgY3VycmVu
+      dCBjb250ZW50cyBvZiBhIHVzZXIncyBjYXJ0LiIsImlucHV0U2NoZW1hIjp7ImFkZGl0aW9uYWxQ
+      cm9wZXJ0aWVzIjpmYWxzZSwicHJvcGVydGllcyI6eyJ1c2VyX2lkIjp7InR5cGUiOiJzdHJpbmci
+      fX0sInJlcXVpcmVkIjpbInVzZXJfaWQiXSwidHlwZSI6Im9iamVjdCJ9LCJvdXRwdXRTY2hlbWEi
+      Om51bGwsImljb25zIjpudWxsLCJhbm5vdGF0aW9ucyI6bnVsbCwibWV0YSI6eyJmYXN0bWNwIjp7
+      InRhZ3MiOltdfX0sImV4ZWN1dGlvbiI6bnVsbH0seyJuYW1lIjoiZ2V0X3Byb2R1Y3QiLCJ0aXRs
+      ZSI6bnVsbCwiZGVzY3JpcHRpb24iOiJHZXQgZGV0YWlsZWQgaW5mb3JtYXRpb24gYWJvdXQgYSBw
+      cm9kdWN0IHVzaW5nIGl0cyBJRC4iLCJpbnB1dFNjaGVtYSI6eyJhZGRpdGlvbmFsUHJvcGVydGll
+      cyI6ZmFsc2UsInByb3BlcnRpZXMiOnsicHJvZHVjdF9pZCI6eyJ0eXBlIjoic3RyaW5nIn19LCJy
+      ZXF1aXJlZCI6WyJwcm9kdWN0X2lkIl0sInR5cGUiOiJvYmplY3QifSwib3V0cHV0U2NoZW1hIjpu
+      dWxsLCJpY29ucyI6bnVsbCwiYW5ub3RhdGlvbnMiOm51bGwsIm1ldGEiOnsiZmFzdG1jcCI6eyJ0
+      YWdzIjpbXX19LCJleGVjdXRpb24iOm51bGx9LHsibmFtZSI6ImdldF9yZWNvbW1lbmRhdGlvbnMi
+      LCJ0aXRsZSI6bnVsbCwiZGVzY3JpcHRpb24iOiJHZXQgcHJvZHVjdCByZWNvbW1lbmRhdGlvbnMg
+      Zm9yIGEgdXNlci4iLCJpbnB1dFNjaGVtYSI6eyJhZGRpdGlvbmFsUHJvcGVydGllcyI6ZmFsc2Us
+      InByb3BlcnRpZXMiOnsicHJvZHVjdF9pZCI6eyJ0eXBlIjoic3RyaW5nIn19LCJyZXF1aXJlZCI6
+      WyJwcm9kdWN0X2lkIl0sInR5cGUiOiJvYmplY3QifSwib3V0cHV0U2NoZW1hIjpudWxsLCJpY29u
+      cyI6bnVsbCwiYW5ub3RhdGlvbnMiOm51bGwsIm1ldGEiOnsiZmFzdG1jcCI6eyJ0YWdzIjpbXX19
+      LCJleGVjdXRpb24iOm51bGx9LHsibmFtZSI6ImdldF9zaGlwcGluZ19xdW90ZSIsInRpdGxlIjpu
+      dWxsLCJkZXNjcmlwdGlvbiI6IkdldCBlc3RpbWF0ZWQgc2hpcHBpbmcgY29zdCBmb3IgYSBnaXZl
+      biBhZGRyZXNzLlxuYGl0ZW1zYDogbGlzdCBvZiB7cHJvZHVjdElkLCBxdWFudGl0eX0gKGEgc2lu
+      Z2xlIGRpY3QgaXMgYWxzbyBhY2NlcHRlZCkuXG5gY3VycmVuY3lfY29kZWA6IElTTyA0MjE3IGNv
+      ZGUsIGUuZy4gXCJVU0RcIi5cbmBhZGRyZXNzYDoge3N0cmVldEFkZHJlc3MsIGNpdHksIHN0YXRl
+      LCBjb3VudHJ5LCB6aXBDb2RlfS4iLCJpbnB1dFNjaGVtYSI6eyJhZGRpdGlvbmFsUHJvcGVydGll
+      cyI6ZmFsc2UsInByb3BlcnRpZXMiOnsiaXRlbXMiOnt9LCJjdXJyZW5jeV9jb2RlIjp7fSwiYWRk
+      cmVzcyI6e319LCJyZXF1aXJlZCI6WyJpdGVtcyIsImN1cnJlbmN5X2NvZGUiLCJhZGRyZXNzIl0s
+      InR5cGUiOiJvYmplY3QifSwib3V0cHV0U2NoZW1hIjpudWxsLCJpY29ucyI6bnVsbCwiYW5ub3Rh
+      dGlvbnMiOm51bGwsIm1ldGEiOnsiZmFzdG1jcCI6eyJ0YWdzIjpbXX19LCJleGVjdXRpb24iOm51
+      bGx9LHsibmFtZSI6ImdldF9zdXBwb3J0ZWRfY3VycmVuY2llcyIsInRpdGxlIjpudWxsLCJkZXNj
+      cmlwdGlvbiI6Ikxpc3Qgc3VwcG9ydGVkIGN1cnJlbmNpZXMgaW4gQXN0cm9ub215IFNob3AuIiwi
+      aW5wdXRTY2hlbWEiOnsiYWRkaXRpb25hbFByb3BlcnRpZXMiOmZhbHNlLCJwcm9wZXJ0aWVzIjp7
+      fSwidHlwZSI6Im9iamVjdCJ9LCJvdXRwdXRTY2hlbWEiOm51bGwsImljb25zIjpudWxsLCJhbm5v
+      dGF0aW9ucyI6bnVsbCwibWV0YSI6eyJmYXN0bWNwIjp7InRhZ3MiOltdfX0sImV4ZWN1dGlvbiI6
+      bnVsbH0seyJuYW1lIjoibGlzdF9wcm9kdWN0cyIsInRpdGxlIjpudWxsLCJkZXNjcmlwdGlvbiI6
+      Ikxpc3QgYWxsIHByb2R1Y3RzIGF2YWlsYWJsZSBpbiB0aGUgQXN0cm9ub215IFNob3AuIiwiaW5w
+      dXRTY2hlbWEiOnsiYWRkaXRpb25hbFByb3BlcnRpZXMiOmZhbHNlLCJwcm9wZXJ0aWVzIjp7fSwi
+      dHlwZSI6Im9iamVjdCJ9LCJvdXRwdXRTY2hlbWEiOm51bGwsImljb25zIjpudWxsLCJhbm5vdGF0
+      aW9ucyI6bnVsbCwibWV0YSI6eyJmYXN0bWNwIjp7InRhZ3MiOltdfX0sImV4ZWN1dGlvbiI6bnVs
+      bH1dfXoCGAGFAQABAAA=
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '5201'
+      Content-Type:
+      - application/x-protobuf
+      User-Agent:
+      - OTel-OTLP-Exporter-Python/1.43.0
+    method: POST
+    uri: http://otel-collector:4318/v1/traces
+  response:
+    body:
+      string: "\n\0"
+    headers: {}
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages": [{"content": "You are a helpful assistant. Be concise and
+      accurate.", "role": "system"}, {"content": "What current promotions are available
+      on binoculars?", "role": "user"}], "model": "gpt-5-nano", "stream": false, "tools":
+      [{"function": {"description": "Add a product (product_id) to the shopping cart
+      for a user (user_id).", "name": "add_to_cart", "parameters": {"additionalProperties":
+      false, "properties": {"product_id": {"type": "string"}, "quantity": {"default":
+      1, "type": "integer"}, "user_id": {"type": "string"}}, "required": ["user_id",
+      "product_id"], "type": "object"}}, "type": "function"}, {"function": {"description":
+      "Checkout the user''s cart and create an order.\nTakes request in the format
+      {string user_id, string userCurrency, Address address, string email, CreditCardInfo
+      creditCard}\nWhere Address is {string streetAddress, string city, string state,
+      string country, string zipCode} and\nCreditCardInfo is {string creditCardNumber,
+      int32 creditCardCvv, int32 creditCardExpirationYear, int32 creditCardExpirationMonth}",
+      "name": "checkout", "parameters": {"additionalProperties": false, "properties":
+      {"checkout_person": {}}, "required": ["checkout_person"], "type": "object"}},
+      "type": "function"}, {"function": {"description": "Empty the shopping cart for
+      a user.", "name": "empty_cart", "parameters": {"additionalProperties": false,
+      "properties": {"user_id": {"type": "string"}}, "required": ["user_id"], "type":
+      "object"}}, "type": "function"}, {"function": {"description": "Fetch promotional
+      ads for Astronomy Shop homepage.\nEg : category: `telescopes` or `travel`",
+      "name": "get_ads", "parameters": {"additionalProperties": false, "properties":
+      {"category": {"type": "string"}}, "required": ["category"], "type": "object"}},
+      "type": "function"}, {"function": {"description": "Retrieve the current contents
+      of a user''s cart.", "name": "get_cart", "parameters": {"additionalProperties":
+      false, "properties": {"user_id": {"type": "string"}}, "required": ["user_id"],
+      "type": "object"}}, "type": "function"}, {"function": {"description": "Get detailed
+      information about a product using its ID.", "name": "get_product", "parameters":
+      {"additionalProperties": false, "properties": {"product_id": {"type": "string"}},
+      "required": ["product_id"], "type": "object"}}, "type": "function"}, {"function":
+      {"description": "Get product recommendations for a user.", "name": "get_recommendations",
+      "parameters": {"additionalProperties": false, "properties": {"product_id": {"type":
+      "string"}}, "required": ["product_id"], "type": "object"}}, "type": "function"},
+      {"function": {"description": "Get estimated shipping cost for a given address.\n`items`:
+      list of {productId, quantity} (a single dict is also accepted).\n`currency_code`:
+      ISO 4217 code, e.g. \"USD\".\n`address`: {streetAddress, city, state, country,
+      zipCode}.", "name": "get_shipping_quote", "parameters": {"additionalProperties":
+      false, "properties": {"address": {}, "currency_code": {}, "items": {}}, "required":
+      ["items", "currency_code", "address"], "type": "object"}}, "type": "function"},
+      {"function": {"description": "List supported currencies in Astronomy Shop.",
+      "name": "get_supported_currencies", "parameters": {"additionalProperties": false,
+      "properties": {}, "type": "object"}}, "type": "function"}, {"function": {"description":
+      "List all products available in the Astronomy Shop.", "name": "list_products",
+      "parameters": {"additionalProperties": false, "properties": {}, "type": "object"}},
+      "type": "function"}]}'
+    headers: {}
+    method: POST
+    uri: https://vcr.local/
+  response:
+    body:
+      string: '{"choices": [{"finish_reason": "tool_calls", "index": 0, "message":
+        {"content": null, "refusal": null, "role": "assistant", "tool_calls": [{"function":
+        {"arguments": "{\"category\":\"binoculars\"}", "name": "get_ads"}, "id": "call_BEKppwsR49pPwBsL8DnVUg37",
+        "type": "function"}]}}], "created": 0, "id": "chatcmpl-fixture", "model":
+        "gpt-5-nano-2025-08-07", "object": "chat.completion", "usage": {"completion_tokens":
+        153, "completion_tokens_details": {"accepted_prediction_tokens": 0, "audio_tokens":
+        0, "reasoning_tokens": 128, "rejected_prediction_tokens": 0}, "prompt_tokens":
+        532, "prompt_tokens_details": {"audio_tokens": 0, "cached_tokens": 0}, "total_tokens":
+        685}}'
+    headers: {}
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages": [{"content": "You are a helpful assistant. Be concise and
+      accurate.", "role": "system"}, {"content": "What currencies are supported by
+      the Astronomy Shop?", "role": "user"}], "model": "gpt-5-nano", "stream": false,
+      "tools": [{"function": {"description": "Add a product (product_id) to the shopping
+      cart for a user (user_id).", "name": "add_to_cart", "parameters": {"additionalProperties":
+      false, "properties": {"product_id": {"type": "string"}, "quantity": {"default":
+      1, "type": "integer"}, "user_id": {"type": "string"}}, "required": ["user_id",
+      "product_id"], "type": "object"}}, "type": "function"}, {"function": {"description":
+      "Checkout the user''s cart and create an order.\nTakes request in the format
+      {string user_id, string userCurrency, Address address, string email, CreditCardInfo
+      creditCard}\nWhere Address is {string streetAddress, string city, string state,
+      string country, string zipCode} and\nCreditCardInfo is {string creditCardNumber,
+      int32 creditCardCvv, int32 creditCardExpirationYear, int32 creditCardExpirationMonth}",
+      "name": "checkout", "parameters": {"additionalProperties": false, "properties":
+      {"checkout_person": {}}, "required": ["checkout_person"], "type": "object"}},
+      "type": "function"}, {"function": {"description": "Empty the shopping cart for
+      a user.", "name": "empty_cart", "parameters": {"additionalProperties": false,
+      "properties": {"user_id": {"type": "string"}}, "required": ["user_id"], "type":
+      "object"}}, "type": "function"}, {"function": {"description": "Fetch promotional
+      ads for Astronomy Shop homepage.\nEg : category: `telescopes` or `travel`",
+      "name": "get_ads", "parameters": {"additionalProperties": false, "properties":
+      {"category": {"type": "string"}}, "required": ["category"], "type": "object"}},
+      "type": "function"}, {"function": {"description": "Retrieve the current contents
+      of a user''s cart.", "name": "get_cart", "parameters": {"additionalProperties":
+      false, "properties": {"user_id": {"type": "string"}}, "required": ["user_id"],
+      "type": "object"}}, "type": "function"}, {"function": {"description": "Get detailed
+      information about a product using its ID.", "name": "get_product", "parameters":
+      {"additionalProperties": false, "properties": {"product_id": {"type": "string"}},
+      "required": ["product_id"], "type": "object"}}, "type": "function"}, {"function":
+      {"description": "Get product recommendations for a user.", "name": "get_recommendations",
+      "parameters": {"additionalProperties": false, "properties": {"product_id": {"type":
+      "string"}}, "required": ["product_id"], "type": "object"}}, "type": "function"},
+      {"function": {"description": "Get estimated shipping cost for a given address.\n`items`:
+      list of {productId, quantity} (a single dict is also accepted).\n`currency_code`:
+      ISO 4217 code, e.g. \"USD\".\n`address`: {streetAddress, city, state, country,
+      zipCode}.", "name": "get_shipping_quote", "parameters": {"additionalProperties":
+      false, "properties": {"address": {}, "currency_code": {}, "items": {}}, "required":
+      ["items", "currency_code", "address"], "type": "object"}}, "type": "function"},
+      {"function": {"description": "List supported currencies in Astronomy Shop.",
+      "name": "get_supported_currencies", "parameters": {"additionalProperties": false,
+      "properties": {}, "type": "object"}}, "type": "function"}, {"function": {"description":
+      "List all products available in the Astronomy Shop.", "name": "list_products",
+      "parameters": {"additionalProperties": false, "properties": {}, "type": "object"}},
+      "type": "function"}]}'
+    headers: {}
+    method: POST
+    uri: https://vcr.local/
+  response:
+    body:
+      string: '{"choices": [{"finish_reason": "tool_calls", "index": 0, "message":
+        {"content": null, "refusal": null, "role": "assistant", "tool_calls": [{"function":
+        {"arguments": "{}", "name": "get_supported_currencies"}, "id": "call_mcDZI6IeZa08qdoYXPxu0AWu",
+        "type": "function"}]}}], "created": 0, "id": "chatcmpl-fixture", "model":
+        "gpt-5-nano-2025-08-07", "object": "chat.completion", "usage": {"completion_tokens":
+        85, "completion_tokens_details": {"accepted_prediction_tokens": 0, "audio_tokens":
+        0, "reasoning_tokens": 64, "rejected_prediction_tokens": 0}, "prompt_tokens":
+        532, "prompt_tokens_details": {"audio_tokens": 0, "cached_tokens": 0}, "total_tokens":
+        617}}'
+    headers: {}
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages": [{"content": "You are a helpful assistant. Be concise and
+      accurate.", "role": "system"}, {"content": "What currencies are supported by
+      the Astronomy Shop?", "role": "user"}, {"content": null, "role": "assistant",
+      "tool_calls": [{"function": {"arguments": "{}", "name": "get_supported_currencies"},
+      "id": "call_mcDZI6IeZa08qdoYXPxu0AWu", "type": "function"}]}, {"content": [{"text":
+      "[\"ZAR\",\"ISK\",\"ILS\",\"RON\",\"GBP\",\"BRL\",\"CZK\",\"AUD\",\"BGN\",\"JPY\",\"PHP\",\"HUF\",\"USD\",\"SGD\",\"IDR\",\"CHF\",\"TRY\",\"NZD\",\"THB\",\"DKK\",\"PLN\",\"NOK\",\"HRK\",\"HKD\",\"EUR\",\"RUB\",\"CAD\",\"INR\",\"SEK\",\"KRW\",\"CNY\",\"MXN\",\"MYR\"]",
+      "type": "text"}], "role": "tool", "tool_call_id": "call_mcDZI6IeZa08qdoYXPxu0AWu"}],
+      "model": "gpt-5-nano", "stream": false, "tools": [{"function": {"description":
+      "Add a product (product_id) to the shopping cart for a user (user_id).", "name":
+      "add_to_cart", "parameters": {"additionalProperties": false, "properties": {"product_id":
+      {"type": "string"}, "quantity": {"default": 1, "type": "integer"}, "user_id":
+      {"type": "string"}}, "required": ["user_id", "product_id"], "type": "object"}},
+      "type": "function"}, {"function": {"description": "Checkout the user''s cart
+      and create an order.\nTakes request in the format {string user_id, string userCurrency,
+      Address address, string email, CreditCardInfo creditCard}\nWhere Address is
+      {string streetAddress, string city, string state, string country, string zipCode}
+      and\nCreditCardInfo is {string creditCardNumber, int32 creditCardCvv, int32
+      creditCardExpirationYear, int32 creditCardExpirationMonth}", "name": "checkout",
+      "parameters": {"additionalProperties": false, "properties": {"checkout_person":
+      {}}, "required": ["checkout_person"], "type": "object"}}, "type": "function"},
+      {"function": {"description": "Empty the shopping cart for a user.", "name":
+      "empty_cart", "parameters": {"additionalProperties": false, "properties": {"user_id":
+      {"type": "string"}}, "required": ["user_id"], "type": "object"}}, "type": "function"},
+      {"function": {"description": "Fetch promotional ads for Astronomy Shop homepage.\nEg
+      : category: `telescopes` or `travel`", "name": "get_ads", "parameters": {"additionalProperties":
+      false, "properties": {"category": {"type": "string"}}, "required": ["category"],
+      "type": "object"}}, "type": "function"}, {"function": {"description": "Retrieve
+      the current contents of a user''s cart.", "name": "get_cart", "parameters":
+      {"additionalProperties": false, "properties": {"user_id": {"type": "string"}},
+      "required": ["user_id"], "type": "object"}}, "type": "function"}, {"function":
+      {"description": "Get detailed information about a product using its ID.", "name":
+      "get_product", "parameters": {"additionalProperties": false, "properties": {"product_id":
+      {"type": "string"}}, "required": ["product_id"], "type": "object"}}, "type":
+      "function"}, {"function": {"description": "Get product recommendations for a
+      user.", "name": "get_recommendations", "parameters": {"additionalProperties":
+      false, "properties": {"product_id": {"type": "string"}}, "required": ["product_id"],
+      "type": "object"}}, "type": "function"}, {"function": {"description": "Get estimated
+      shipping cost for a given address.\n`items`: list of {productId, quantity} (a
+      single dict is also accepted).\n`currency_code`: ISO 4217 code, e.g. \"USD\".\n`address`:
+      {streetAddress, city, state, country, zipCode}.", "name": "get_shipping_quote",
+      "parameters": {"additionalProperties": false, "properties": {"address": {},
+      "currency_code": {}, "items": {}}, "required": ["items", "currency_code", "address"],
+      "type": "object"}}, "type": "function"}, {"function": {"description": "List
+      supported currencies in Astronomy Shop.", "name": "get_supported_currencies",
+      "parameters": {"additionalProperties": false, "properties": {}, "type": "object"}},
+      "type": "function"}, {"function": {"description": "List all products available
+      in the Astronomy Shop.", "name": "list_products", "parameters": {"additionalProperties":
+      false, "properties": {}, "type": "object"}}, "type": "function"}]}'
+    headers: {}
+    method: POST
+    uri: https://vcr.local/
+  response:
+    body:
+      string: '{"choices": [{"finish_reason": "stop", "index": 0, "message": {"content":
+        "The Astronomy Shop supports these currencies (ISO codes):\n- ZAR\n- ISK\n-
+        ILS\n- RON\n- GBP\n- BRL\n- CZK\n- AUD\n- BGN\n- JPY\n- PHP\n- HUF\n- USD\n-
+        SGD\n- IDR\n- CHF\n- TRY\n- NZD\n- THB\n- DKK\n- PLN\n- NOK\n- HRK\n- HKD\n-
+        EUR\n- RUB\n- CAD\n- INR\n- SEK\n- KRW\n- CNY\n- MXN\n- MYR", "refusal": null,
+        "role": "assistant"}}], "created": 0, "id": "chatcmpl-fixture", "model": "gpt-5-nano-2025-08-07",
+        "object": "chat.completion", "usage": {"completion_tokens": 1032, "completion_tokens_details":
+        {"accepted_prediction_tokens": 0, "audio_tokens": 0, "reasoning_tokens": 896,
+        "rejected_prediction_tokens": 0}, "prompt_tokens": 648, "prompt_tokens_details":
+        {"audio_tokens": 0, "cached_tokens": 0}, "total_tokens": 1680}}'
+    headers: {}
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"id": 8, "jsonrpc": "2.0", "method": "tools/list"}'
+    headers: {}
+    method: POST
+    uri: https://vcr.local/
+  response:
+    body:
+      string: "event: message\r\ndata: {\"jsonrpc\":\"2.0\",\"id\":8,\"result\":{\"tools\":[{\"name\":\"add_to_cart\",\"description\":\"Add
+        a product (product_id) to the shopping cart for a user (user_id).\",\"inputSchema\":{\"additionalProperties\":false,\"properties\":{\"user_id\":{\"type\":\"string\"},\"product_id\":{\"type\":\"string\"},\"quantity\":{\"default\":1,\"type\":\"integer\"}},\"required\":[\"user_id\",\"product_id\"],\"type\":\"object\"},\"_meta\":{\"fastmcp\":{\"tags\":[]}}},{\"name\":\"checkout\",\"description\":\"Checkout
+        the user's cart and create an order.\\nTakes request in the format {string
+        user_id, string userCurrency, Address address, string email, CreditCardInfo
+        creditCard}\\nWhere Address is {string streetAddress, string city, string
+        state, string country, string zipCode} and\\nCreditCardInfo is {string creditCardNumber,
+        int32 creditCardCvv, int32 creditCardExpirationYear, int32 creditCardExpirationMonth}\",\"inputSchema\":{\"additionalProperties\":false,\"properties\":{\"checkout_person\":{}},\"required\":[\"checkout_person\"],\"type\":\"object\"},\"_meta\":{\"fastmcp\":{\"tags\":[]}}},{\"name\":\"empty_cart\",\"description\":\"Empty
+        the shopping cart for a user.\",\"inputSchema\":{\"additionalProperties\":false,\"properties\":{\"user_id\":{\"type\":\"string\"}},\"required\":[\"user_id\"],\"type\":\"object\"},\"_meta\":{\"fastmcp\":{\"tags\":[]}}},{\"name\":\"get_ads\",\"description\":\"Fetch
+        promotional ads for Astronomy Shop homepage.\\nEg : category: `telescopes`
+        or `travel`\",\"inputSchema\":{\"additionalProperties\":false,\"properties\":{\"category\":{\"type\":\"string\"}},\"required\":[\"category\"],\"type\":\"object\"},\"_meta\":{\"fastmcp\":{\"tags\":[]}}},{\"name\":\"get_cart\",\"description\":\"Retrieve
+        the current contents of a user's cart.\",\"inputSchema\":{\"additionalProperties\":false,\"properties\":{\"user_id\":{\"type\":\"string\"}},\"required\":[\"user_id\"],\"type\":\"object\"},\"_meta\":{\"fastmcp\":{\"tags\":[]}}},{\"name\":\"get_product\",\"description\":\"Get
+        detailed information about a product using its ID.\",\"inputSchema\":{\"additionalProperties\":false,\"properties\":{\"product_id\":{\"type\":\"string\"}},\"required\":[\"product_id\"],\"type\":\"object\"},\"_meta\":{\"fastmcp\":{\"tags\":[]}}},{\"name\":\"get_recommendations\",\"description\":\"Get
+        product recommendations for a user.\",\"inputSchema\":{\"additionalProperties\":false,\"properties\":{\"product_id\":{\"type\":\"string\"}},\"required\":[\"product_id\"],\"type\":\"object\"},\"_meta\":{\"fastmcp\":{\"tags\":[]}}},{\"name\":\"get_shipping_quote\",\"description\":\"Get
+        estimated shipping cost for a given address.\\n`items`: list of {productId,
+        quantity} (a single dict is also accepted).\\n`currency_code`: ISO 4217 code,
+        e.g. \\\"USD\\\".\\n`address`: {streetAddress, city, state, country, zipCode}.\",\"inputSchema\":{\"additionalProperties\":false,\"properties\":{\"items\":{},\"currency_code\":{},\"address\":{}},\"required\":[\"items\",\"currency_code\",\"address\"],\"type\":\"object\"},\"_meta\":{\"fastmcp\":{\"tags\":[]}}},{\"name\":\"get_supported_currencies\",\"description\":\"List
+        supported currencies in Astronomy Shop.\",\"inputSchema\":{\"additionalProperties\":false,\"properties\":{},\"type\":\"object\"},\"_meta\":{\"fastmcp\":{\"tags\":[]}}},{\"name\":\"list_products\",\"description\":\"List
+        all products available in the Astronomy Shop.\",\"inputSchema\":{\"additionalProperties\":false,\"properties\":{},\"type\":\"object\"},\"_meta\":{\"fastmcp\":{\"tags\":[]}}}]}}\r\n\r\n"
+    headers: {}
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"id": 9, "jsonrpc": "2.0", "method": "tools/call", "params": {"arguments":
+      {}, "name": "list_products"}}'
+    headers: {}
+    method: POST
+    uri: https://vcr.local/
+  response:
+    body:
+      string: "event: message\r\ndata: {\"jsonrpc\":\"2.0\",\"id\":9,\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"Error
+        while fetching product list: Server error '500 Internal Server Error' for
+        url 'http://frontend:8080/api/products'\\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500\"}],\"isError\":false}}\r\n\r\n"
+    headers: {}
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages": [{"content": "You are a helpful assistant. Be concise and
+      accurate.", "role": "system"}, {"content": "What current promotions are available
+      on binoculars?", "role": "user"}, {"content": null, "role": "assistant", "tool_calls":
+      [{"function": {"arguments": "{\"category\": \"binoculars\"}", "name": "get_ads"},
+      "id": "call_BEKppwsR49pPwBsL8DnVUg37", "type": "function"}]}, {"content": [{"text":
+      "[{\"redirectUrl\":\"/product/2ZYFJ3GM2N\",\"text\":\"Roof Binoculars for sale.
+      50% off.\"}]", "type": "text"}], "role": "tool", "tool_call_id": "call_BEKppwsR49pPwBsL8DnVUg37"}],
+      "model": "gpt-5-nano", "stream": false, "tools": [{"function": {"description":
+      "Add a product (product_id) to the shopping cart for a user (user_id).", "name":
+      "add_to_cart", "parameters": {"additionalProperties": false, "properties": {"product_id":
+      {"type": "string"}, "quantity": {"default": 1, "type": "integer"}, "user_id":
+      {"type": "string"}}, "required": ["user_id", "product_id"], "type": "object"}},
+      "type": "function"}, {"function": {"description": "Checkout the user''s cart
+      and create an order.\nTakes request in the format {string user_id, string userCurrency,
+      Address address, string email, CreditCardInfo creditCard}\nWhere Address is
+      {string streetAddress, string city, string state, string country, string zipCode}
+      and\nCreditCardInfo is {string creditCardNumber, int32 creditCardCvv, int32
+      creditCardExpirationYear, int32 creditCardExpirationMonth}", "name": "checkout",
+      "parameters": {"additionalProperties": false, "properties": {"checkout_person":
+      {}}, "required": ["checkout_person"], "type": "object"}}, "type": "function"},
+      {"function": {"description": "Empty the shopping cart for a user.", "name":
+      "empty_cart", "parameters": {"additionalProperties": false, "properties": {"user_id":
+      {"type": "string"}}, "required": ["user_id"], "type": "object"}}, "type": "function"},
+      {"function": {"description": "Fetch promotional ads for Astronomy Shop homepage.\nEg
+      : category: `telescopes` or `travel`", "name": "get_ads", "parameters": {"additionalProperties":
+      false, "properties": {"category": {"type": "string"}}, "required": ["category"],
+      "type": "object"}}, "type": "function"}, {"function": {"description": "Retrieve
+      the current contents of a user''s cart.", "name": "get_cart", "parameters":
+      {"additionalProperties": false, "properties": {"user_id": {"type": "string"}},
+      "required": ["user_id"], "type": "object"}}, "type": "function"}, {"function":
+      {"description": "Get detailed information about a product using its ID.", "name":
+      "get_product", "parameters": {"additionalProperties": false, "properties": {"product_id":
+      {"type": "string"}}, "required": ["product_id"], "type": "object"}}, "type":
+      "function"}, {"function": {"description": "Get product recommendations for a
+      user.", "name": "get_recommendations", "parameters": {"additionalProperties":
+      false, "properties": {"product_id": {"type": "string"}}, "required": ["product_id"],
+      "type": "object"}}, "type": "function"}, {"function": {"description": "Get estimated
+      shipping cost for a given address.\n`items`: list of {productId, quantity} (a
+      single dict is also accepted).\n`currency_code`: ISO 4217 code, e.g. \"USD\".\n`address`:
+      {streetAddress, city, state, country, zipCode}.", "name": "get_shipping_quote",
+      "parameters": {"additionalProperties": false, "properties": {"address": {},
+      "currency_code": {}, "items": {}}, "required": ["items", "currency_code", "address"],
+      "type": "object"}}, "type": "function"}, {"function": {"description": "List
+      supported currencies in Astronomy Shop.", "name": "get_supported_currencies",
+      "parameters": {"additionalProperties": false, "properties": {}, "type": "object"}},
+      "type": "function"}, {"function": {"description": "List all products available
+      in the Astronomy Shop.", "name": "list_products", "parameters": {"additionalProperties":
+      false, "properties": {}, "type": "object"}}, "type": "function"}]}'
+    headers: {}
+    method: POST
+    uri: https://vcr.local/
+  response:
+    body:
+      string: '{"choices": [{"finish_reason": "tool_calls", "index": 0, "message":
+        {"content": null, "refusal": null, "role": "assistant", "tool_calls": [{"function":
+        {"arguments": "{\"product_id\":\"2ZYFJ3GM2N\"}", "name": "get_product"}, "id":
+        "call_5tIylUOjfwCxCEhI6LX1RDup", "type": "function"}]}}], "created": 0, "id":
+        "chatcmpl-fixture", "model": "gpt-5-nano-2025-08-07", "object": "chat.completion",
+        "usage": {"completion_tokens": 479, "completion_tokens_details": {"accepted_prediction_tokens":
+        0, "audio_tokens": 0, "reasoning_tokens": 448, "rejected_prediction_tokens":
+        0}, "prompt_tokens": 594, "prompt_tokens_details": {"audio_tokens": 0, "cached_tokens":
+        0}, "total_tokens": 1073}}'
+    headers: {}
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages": [{"content": "You are a helpful assistant. Be concise and
+      accurate.", "role": "system"}, {"content": "What current promotions are available
+      on binoculars?", "role": "user"}, {"content": null, "role": "assistant", "tool_calls":
+      [{"function": {"arguments": "{\"category\": \"binoculars\"}", "name": "get_ads"},
+      "id": "call_BEKppwsR49pPwBsL8DnVUg37", "type": "function"}]}, {"content": [{"text":
+      "[{\"redirectUrl\":\"/product/2ZYFJ3GM2N\",\"text\":\"Roof Binoculars for sale.
+      50% off.\"}]", "type": "text"}], "role": "tool", "tool_call_id": "call_BEKppwsR49pPwBsL8DnVUg37"},
+      {"content": null, "role": "assistant", "tool_calls": [{"function": {"arguments":
+      "{\"product_id\": \"2ZYFJ3GM2N\"}", "name": "get_product"}, "id": "call_5tIylUOjfwCxCEhI6LX1RDup",
+      "type": "function"}]}, {"content": [{"text": "Error while fetching product 2ZYFJ3GM2N:
+      Server error ''500 Internal Server Error'' for url ''http://frontend:8080/api/products/2ZYFJ3GM2N''\nFor
+      more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500",
+      "type": "text"}], "role": "tool", "tool_call_id": "call_5tIylUOjfwCxCEhI6LX1RDup"}],
+      "model": "gpt-5-nano", "stream": false, "tools": [{"function": {"description":
+      "Add a product (product_id) to the shopping cart for a user (user_id).", "name":
+      "add_to_cart", "parameters": {"additionalProperties": false, "properties": {"product_id":
+      {"type": "string"}, "quantity": {"default": 1, "type": "integer"}, "user_id":
+      {"type": "string"}}, "required": ["user_id", "product_id"], "type": "object"}},
+      "type": "function"}, {"function": {"description": "Checkout the user''s cart
+      and create an order.\nTakes request in the format {string user_id, string userCurrency,
+      Address address, string email, CreditCardInfo creditCard}\nWhere Address is
+      {string streetAddress, string city, string state, string country, string zipCode}
+      and\nCreditCardInfo is {string creditCardNumber, int32 creditCardCvv, int32
+      creditCardExpirationYear, int32 creditCardExpirationMonth}", "name": "checkout",
+      "parameters": {"additionalProperties": false, "properties": {"checkout_person":
+      {}}, "required": ["checkout_person"], "type": "object"}}, "type": "function"},
+      {"function": {"description": "Empty the shopping cart for a user.", "name":
+      "empty_cart", "parameters": {"additionalProperties": false, "properties": {"user_id":
+      {"type": "string"}}, "required": ["user_id"], "type": "object"}}, "type": "function"},
+      {"function": {"description": "Fetch promotional ads for Astronomy Shop homepage.\nEg
+      : category: `telescopes` or `travel`", "name": "get_ads", "parameters": {"additionalProperties":
+      false, "properties": {"category": {"type": "string"}}, "required": ["category"],
+      "type": "object"}}, "type": "function"}, {"function": {"description": "Retrieve
+      the current contents of a user''s cart.", "name": "get_cart", "parameters":
+      {"additionalProperties": false, "properties": {"user_id": {"type": "string"}},
+      "required": ["user_id"], "type": "object"}}, "type": "function"}, {"function":
+      {"description": "Get detailed information about a product using its ID.", "name":
+      "get_product", "parameters": {"additionalProperties": false, "properties": {"product_id":
+      {"type": "string"}}, "required": ["product_id"], "type": "object"}}, "type":
+      "function"}, {"function": {"description": "Get product recommendations for a
+      user.", "name": "get_recommendations", "parameters": {"additionalProperties":
+      false, "properties": {"product_id": {"type": "string"}}, "required": ["product_id"],
+      "type": "object"}}, "type": "function"}, {"function": {"description": "Get estimated
+      shipping cost for a given address.\n`items`: list of {productId, quantity} (a
+      single dict is also accepted).\n`currency_code`: ISO 4217 code, e.g. \"USD\".\n`address`:
+      {streetAddress, city, state, country, zipCode}.", "name": "get_shipping_quote",
+      "parameters": {"additionalProperties": false, "properties": {"address": {},
+      "currency_code": {}, "items": {}}, "required": ["items", "currency_code", "address"],
+      "type": "object"}}, "type": "function"}, {"function": {"description": "List
+      supported currencies in Astronomy Shop.", "name": "get_supported_currencies",
+      "parameters": {"additionalProperties": false, "properties": {}, "type": "object"}},
+      "type": "function"}, {"function": {"description": "List all products available
+      in the Astronomy Shop.", "name": "list_products", "parameters": {"additionalProperties":
+      false, "properties": {}, "type": "object"}}, "type": "function"}]}'
+    headers: {}
+    method: POST
+    uri: https://vcr.local/
+  response:
+    body:
+      string: '{"choices": [{"finish_reason": "stop", "index": 0, "message": {"content":
+        "Here are the current binoculars promotions I found:\n\n- Roof Binoculars
+        \u2014 50% off. Link: /product/2ZYFJ3GM2N\n\nNote: I tried fetching more product
+        details but hit a server error. I can retry for details, fetch other binoculars
+        promos, or add the item to your cart if you\u2019d like. What would you like
+        me to do next?", "refusal": null, "role": "assistant"}}], "created": 0, "id":
+        "chatcmpl-fixture", "model": "gpt-5-nano-2025-08-07", "object": "chat.completion",
+        "usage": {"completion_tokens": 539, "completion_tokens_details": {"accepted_prediction_tokens":
+        0, "audio_tokens": 0, "reasoning_tokens": 448, "rejected_prediction_tokens":
+        0}, "prompt_tokens": 693, "prompt_tokens_details": {"audio_tokens": 0, "cached_tokens":
+        0}, "total_tokens": 1232}}'
+    headers: {}
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages": [{"content": "You are a helpful assistant. Be concise and
+      accurate.", "role": "system"}, {"content": "Show all available products in the
+      store.", "role": "user"}], "model": "gpt-5-nano", "stream": false, "tools":
+      [{"function": {"description": "Add a product (product_id) to the shopping cart
+      for a user (user_id).", "name": "add_to_cart", "parameters": {"additionalProperties":
+      false, "properties": {"product_id": {"type": "string"}, "quantity": {"default":
+      1, "type": "integer"}, "user_id": {"type": "string"}}, "required": ["user_id",
+      "product_id"], "type": "object"}}, "type": "function"}, {"function": {"description":
+      "Checkout the user''s cart and create an order.\nTakes request in the format
+      {string user_id, string userCurrency, Address address, string email, CreditCardInfo
+      creditCard}\nWhere Address is {string streetAddress, string city, string state,
+      string country, string zipCode} and\nCreditCardInfo is {string creditCardNumber,
+      int32 creditCardCvv, int32 creditCardExpirationYear, int32 creditCardExpirationMonth}",
+      "name": "checkout", "parameters": {"additionalProperties": false, "properties":
+      {"checkout_person": {}}, "required": ["checkout_person"], "type": "object"}},
+      "type": "function"}, {"function": {"description": "Empty the shopping cart for
+      a user.", "name": "empty_cart", "parameters": {"additionalProperties": false,
+      "properties": {"user_id": {"type": "string"}}, "required": ["user_id"], "type":
+      "object"}}, "type": "function"}, {"function": {"description": "Fetch promotional
+      ads for Astronomy Shop homepage.\nEg : category: `telescopes` or `travel`",
+      "name": "get_ads", "parameters": {"additionalProperties": false, "properties":
+      {"category": {"type": "string"}}, "required": ["category"], "type": "object"}},
+      "type": "function"}, {"function": {"description": "Retrieve the current contents
+      of a user''s cart.", "name": "get_cart", "parameters": {"additionalProperties":
+      false, "properties": {"user_id": {"type": "string"}}, "required": ["user_id"],
+      "type": "object"}}, "type": "function"}, {"function": {"description": "Get detailed
+      information about a product using its ID.", "name": "get_product", "parameters":
+      {"additionalProperties": false, "properties": {"product_id": {"type": "string"}},
+      "required": ["product_id"], "type": "object"}}, "type": "function"}, {"function":
+      {"description": "Get product recommendations for a user.", "name": "get_recommendations",
+      "parameters": {"additionalProperties": false, "properties": {"product_id": {"type":
+      "string"}}, "required": ["product_id"], "type": "object"}}, "type": "function"},
+      {"function": {"description": "Get estimated shipping cost for a given address.\n`items`:
+      list of {productId, quantity} (a single dict is also accepted).\n`currency_code`:
+      ISO 4217 code, e.g. \"USD\".\n`address`: {streetAddress, city, state, country,
+      zipCode}.", "name": "get_shipping_quote", "parameters": {"additionalProperties":
+      false, "properties": {"address": {}, "currency_code": {}, "items": {}}, "required":
+      ["items", "currency_code", "address"], "type": "object"}}, "type": "function"},
+      {"function": {"description": "List supported currencies in Astronomy Shop.",
+      "name": "get_supported_currencies", "parameters": {"additionalProperties": false,
+      "properties": {}, "type": "object"}}, "type": "function"}, {"function": {"description":
+      "List all products available in the Astronomy Shop.", "name": "list_products",
+      "parameters": {"additionalProperties": false, "properties": {}, "type": "object"}},
+      "type": "function"}]}'
+    headers: {}
+    method: POST
+    uri: https://vcr.local/
+  response:
+    body:
+      string: '{"choices": [{"finish_reason": "tool_calls", "index": 0, "message":
+        {"content": null, "refusal": null, "role": "assistant", "tool_calls": [{"function":
+        {"arguments": "{}", "name": "list_products"}, "id": "call_KkIiLexZY3hM5xPpVekgQlos",
+        "type": "function"}]}}], "created": 0, "id": "chatcmpl-fixture", "model":
+        "gpt-5-nano-2025-08-07", "object": "chat.completion", "usage": {"completion_tokens":
+        147, "completion_tokens_details": {"accepted_prediction_tokens": 0, "audio_tokens":
+        0, "reasoning_tokens": 128, "rejected_prediction_tokens": 0}, "prompt_tokens":
+        531, "prompt_tokens_details": {"audio_tokens": 0, "cached_tokens": 0}, "total_tokens":
+        678}}'
+    headers: {}
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages": [{"content": "You are a helpful assistant. Be concise and
+      accurate.", "role": "system"}, {"content": "Show all available products in the
+      store.", "role": "user"}, {"content": null, "role": "assistant", "tool_calls":
+      [{"function": {"arguments": "{}", "name": "list_products"}, "id": "call_KkIiLexZY3hM5xPpVekgQlos",
+      "type": "function"}]}, {"content": [{"text": "[{\"id\":\"0PUK6V6EV0\",\"name\":\"Solar
+      System Color Imager\",\"description\":\"You have your new telescope and have
+      observed Saturn and Jupiter. Now you''re ready to take the next step and start
+      imaging them. But where do you begin? The NexImage 10 Solar System Imager is
+      the perfect solution.\",\"picture\":\"SolarSystemColorImager.jpg\",\"priceUsd\":{\"currencyCode\":\"USD\",\"units\":175,\"nanos\":0},\"categories\":[\"accessories\",\"telescopes\"]},{\"id\":\"1YMWWN1N4O\",\"name\":\"Eclipsmart
+      Travel Refractor Telescope\",\"description\":\"Dedicated white-light solar scope
+      for the observer on the go. The 50mm refracting solar scope uses Solar Safe,
+      ISO compliant, full-aperture glass filter material to ensure the safest view
+      of solar events.  The kit comes complete with everything you need, including
+      the dedicated travel solar scope, a Solar Safe finderscope, tripod, a high quality
+      20mm (18x) Kellner eyepiece and a nylon backpack to carry everything in.  This
+      Travel Solar Scope makes it easy to share the Sun as well as partial and total
+      solar eclipses with the whole family and offers much higher magnifications than
+      you would otherwise get using handheld solar viewers or binoculars.\",\"picture\":\"EclipsmartTravelRefractorTelescope.jpg\",\"priceUsd\":{\"currencyCode\":\"USD\",\"units\":129,\"nanos\":950000000},\"categories\":[\"telescopes\",\"travel\"]},{\"id\":\"2ZYFJ3GM2N\",\"name\":\"Roof
+      Binoculars\",\"description\":\"This versatile, all-around binocular is a great
+      choice for the trail, the stadium, the arena, or just about anywhere you want
+      a close-up view of the action without sacrificing brightness or detail. It''s
+      an especially great companion for nature observation and bird watching, with
+      ED glass that helps you spot the subtlest field markings and a close focus of
+      just 6.5 feet.\",\"picture\":\"RoofBinoculars.jpg\",\"priceUsd\":{\"currencyCode\":\"USD\",\"units\":209,\"nanos\":950000000},\"categories\":[\"binoculars\"]},{\"id\":\"66VCHSJNUP\",\"name\":\"Starsense
+      Explorer Refractor Telescope\",\"description\":\"The first telescope that uses
+      your smartphone to analyze the night sky and calculate its position in real
+      time. StarSense Explorer is ideal for beginners thanks to the app''s user-friendly
+      interface and detailed tutorials. It''s like having your own personal tour guide
+      of the night sky\",\"picture\":\"StarsenseExplorer.jpg\",\"priceUsd\":{\"currencyCode\":\"USD\",\"units\":349,\"nanos\":950000000},\"categories\":[\"telescopes\"]},{\"id\":\"6E92ZMYYFZ\",\"name\":\"Solar
+      Filter\",\"description\":\"Enhance your viewing experience with EclipSmart Solar
+      Filter for 8\\\" telescopes. With two Velcro straps and four self-adhesive Velcro
+      pads for added safety, you can be assured that the solar filter cannot be accidentally
+      knocked off and will provide Solar Safe, ISO compliant viewing.\",\"picture\":\"SolarFilter.jpg\",\"priceUsd\":{\"currencyCode\":\"USD\",\"units\":69,\"nanos\":950000000},\"categories\":[\"accessories\",\"telescopes\"]},{\"id\":\"9SIQT8TOJO\",\"name\":\"Optical
+      Tube Assembly\",\"description\":\"Capturing impressive deep-sky astroimages
+      is easier than ever with Rowe-Ackermann Schmidt Astrograph (RASA) V2, the perfect
+      companion to today''s top DSLR or astronomical CCD cameras. This fast, wide-field
+      f/2.2 system allows for shorter exposure times compared to traditional f/10
+      astroimaging, without sacrificing resolution. Because shorter sub-exposure times
+      are possible, your equatorial mount won''t need to accurately track over extended
+      periods. The short focal length also lessens equatorial tracking demands. In
+      many cases, autoguiding will not be required.\",\"picture\":\"OpticalTubeAssembly.jpg\",\"priceUsd\":{\"currencyCode\":\"USD\",\"units\":3599,\"nanos\":0},\"categories\":[\"accessories\",\"telescopes\",\"assembly\"]},{\"id\":\"HQTGWGPNH4\",\"name\":\"The
+      Comet Book\",\"description\":\"A 16th-century treatise on comets, created anonymously
+      in Flanders (now northern France) and now held at the Universit\u00e4tsbibliothek
+      Kassel. Commonly known as The Comet Book (or Kometenbuch in German), its full
+      title translates as \\\"Comets and their General and Particular Meanings, According
+      to Ptolome\u00e9, Albumasar, Haly, Aliquind and other Astrologers\\\". The image
+      is from https://publicdomainreview.org/collection/the-comet-book, made available
+      by the Universit\u00e4tsbibliothek Kassel under a CC-BY SA 4.0 license (https://creativecommons.org/licenses/by-sa/4.0/)\",\"picture\":\"TheCometBook.jpg\",\"priceUsd\":{\"currencyCode\":\"USD\",\"units\":0,\"nanos\":990000000},\"categories\":[\"books\"]},{\"id\":\"L9ECAV7KIM\",\"name\":\"Lens
+      Cleaning Kit\",\"description\":\"Wipe away dust, dirt, fingerprints and other
+      particles on your lenses to see clearly with the Lens Cleaning Kit. This cleaning
+      kit works on all glass and optical surfaces, including telescopes, binoculars,
+      spotting scopes, monoculars, microscopes, and even your camera lenses, computer
+      screens, and mobile devices.  The kit comes complete with a retractable lens
+      brush to remove dust particles and dirt and two options to clean smudges and
+      fingerprints off of your optics, pre-moistened lens wipes and a bottled lens
+      cleaning fluid with soft cloth.\",\"picture\":\"LensCleaningKit.jpg\",\"priceUsd\":{\"currencyCode\":\"USD\",\"units\":21,\"nanos\":950000000},\"categories\":[\"accessories\"]},{\"id\":\"LS4PSXUNUM\",\"name\":\"Red
+      Flashlight\",\"description\":\"This 3-in-1 device features a 3-mode red flashlight,
+      a hand warmer, and a portable power bank for recharging your personal electronics
+      on the go. Whether you use it to light the way at an astronomy star party, a
+      night walk, or wildlife research, ThermoTorch 3 Astro Red''s rugged, IPX4-rated
+      design will withstand your everyday activities.\",\"picture\":\"RedFlashlight.jpg\",\"priceUsd\":{\"currencyCode\":\"USD\",\"units\":57,\"nanos\":80000000},\"categories\":[\"accessories\",\"flashlights\"]},{\"id\":\"OLJCESPC7Z\",\"name\":\"National
+      Park Foundation Explorascope\",\"description\":\"The National Park Foundation''s
+      (NPF) Explorascope 60AZ is a manual alt-azimuth, refractor telescope perfect
+      for celestial viewing on the go. The NPF Explorascope 60 can view the planets,
+      moon, star clusters and brighter deep sky objects like the Orion Nebula and
+      Andromeda Galaxy.\",\"picture\":\"NationalParkFoundationExplorascope.jpg\",\"priceUsd\":{\"currencyCode\":\"USD\",\"units\":101,\"nanos\":960000000},\"categories\":[\"telescopes\"]}]",
+      "type": "text"}], "role": "tool", "tool_call_id": "call_KkIiLexZY3hM5xPpVekgQlos"}],
+      "model": "gpt-5-nano", "stream": false, "tools": [{"function": {"description":
+      "Add a product (product_id) to the shopping cart for a user (user_id).", "name":
+      "add_to_cart", "parameters": {"additionalProperties": false, "properties": {"product_id":
+      {"type": "string"}, "quantity": {"default": 1, "type": "integer"}, "user_id":
+      {"type": "string"}}, "required": ["user_id", "product_id"], "type": "object"}},
+      "type": "function"}, {"function": {"description": "Checkout the user''s cart
+      and create an order.\nTakes request in the format {string user_id, string userCurrency,
+      Address address, string email, CreditCardInfo creditCard}\nWhere Address is
+      {string streetAddress, string city, string state, string country, string zipCode}
+      and\nCreditCardInfo is {string creditCardNumber, int32 creditCardCvv, int32
+      creditCardExpirationYear, int32 creditCardExpirationMonth}", "name": "checkout",
+      "parameters": {"additionalProperties": false, "properties": {"checkout_person":
+      {}}, "required": ["checkout_person"], "type": "object"}}, "type": "function"},
+      {"function": {"description": "Empty the shopping cart for a user.", "name":
+      "empty_cart", "parameters": {"additionalProperties": false, "properties": {"user_id":
+      {"type": "string"}}, "required": ["user_id"], "type": "object"}}, "type": "function"},
+      {"function": {"description": "Fetch promotional ads for Astronomy Shop homepage.\nEg
+      : category: `telescopes` or `travel`", "name": "get_ads", "parameters": {"additionalProperties":
+      false, "properties": {"category": {"type": "string"}}, "required": ["category"],
+      "type": "object"}}, "type": "function"}, {"function": {"description": "Retrieve
+      the current contents of a user''s cart.", "name": "get_cart", "parameters":
+      {"additionalProperties": false, "properties": {"user_id": {"type": "string"}},
+      "required": ["user_id"], "type": "object"}}, "type": "function"}, {"function":
+      {"description": "Get detailed information about a product using its ID.", "name":
+      "get_product", "parameters": {"additionalProperties": false, "properties": {"product_id":
+      {"type": "string"}}, "required": ["product_id"], "type": "object"}}, "type":
+      "function"}, {"function": {"description": "Get product recommendations for a
+      user.", "name": "get_recommendations", "parameters": {"additionalProperties":
+      false, "properties": {"product_id": {"type": "string"}}, "required": ["product_id"],
+      "type": "object"}}, "type": "function"}, {"function": {"description": "Get estimated
+      shipping cost for a given address.\n`items`: list of {productId, quantity} (a
+      single dict is also accepted).\n`currency_code`: ISO 4217 code, e.g. \"USD\".\n`address`:
+      {streetAddress, city, state, country, zipCode}.", "name": "get_shipping_quote",
+      "parameters": {"additionalProperties": false, "properties": {"address": {},
+      "currency_code": {}, "items": {}}, "required": ["items", "currency_code", "address"],
+      "type": "object"}}, "type": "function"}, {"function": {"description": "List
+      supported currencies in Astronomy Shop.", "name": "get_supported_currencies",
+      "parameters": {"additionalProperties": false, "properties": {}, "type": "object"}},
+      "type": "function"}, {"function": {"description": "List all products available
+      in the Astronomy Shop.", "name": "list_products", "parameters": {"additionalProperties":
+      false, "properties": {}, "type": "object"}}, "type": "function"}]}'
+    headers: {}
+    method: POST
+    uri: https://vcr.local/
+  response:
+    body:
+      string: '{"choices": [{"finish_reason": "stop", "index": 0, "message": {"content":
+        "Here are all available products in the Astronomy Shop:\n\n- Solar System
+        Color Imager (ID: 0PUK6V6EV0) \u2014 $175.00 USD \u2014 Categories: accessories,
+        telescopes\n- Eclipsmart Travel Refractor Telescope (ID: 1YMWWN1N4O) \u2014
+        $129.95 USD \u2014 Categories: telescopes, travel\n- Roof Binoculars (ID:
+        2ZYFJ3GM2N) \u2014 $209.95 USD \u2014 Categories: binoculars\n- Starsense
+        Explorer Refractor Telescope (ID: 66VCHSJNUP) \u2014 $349.95 USD \u2014 Categories:
+        telescopes\n- Solar Filter (ID: 6E92ZMYYFZ) \u2014 $69.95 USD \u2014 Categories:
+        accessories, telescopes\n- Optical Tube Assembly (ID: 9SIQT8TOJO) \u2014 $3599.00
+        USD \u2014 Categories: accessories, telescopes, assembly\n- The Comet Book
+        (ID: HQTGWGPNH4) \u2014 $0.99 USD \u2014 Categories: books\n- Lens Cleaning
+        Kit (ID: L9ECAV7KIM) \u2014 $21.95 USD \u2014 Categories: accessories\n- Red
+        Flashlight (ID: LS4PSXUNUM) \u2014 $57.08 USD \u2014 Categories: accessories,
+        flashlights\n- National Park Foundation Explorascope (ID: OLJCESPC7Z) \u2014
+        $101.96 USD \u2014 Categories: telescopes\n\nWould you like details on any
+        item or want to add something to your cart?", "refusal": null, "role": "assistant"}}],
+        "created": 0, "id": "chatcmpl-fixture", "model": "gpt-5-nano-2025-08-07",
+        "object": "chat.completion", "usage": {"completion_tokens": 1808, "completion_tokens_details":
+        {"accepted_prediction_tokens": 0, "audio_tokens": 0, "reasoning_tokens": 1472,
+        "rejected_prediction_tokens": 0}, "prompt_tokens": 1988, "prompt_tokens_details":
+        {"audio_tokens": 0, "cached_tokens": 1792}, "total_tokens": 3796}}'
+    headers: {}
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages": [{"content": "You are a helpful assistant. Be concise and
+      accurate.", "role": "system"}, {"content": "What current promotions are available
+      on binoculars?", "role": "user"}, {"content": null, "role": "assistant", "tool_calls":
+      [{"function": {"arguments": "{\"category\": \"binoculars\"}", "name": "get_ads"},
+      "id": "call_BEKppwsR49pPwBsL8DnVUg37", "type": "function"}]}, {"content": [{"text":
+      "[{\"redirectUrl\":\"/product/2ZYFJ3GM2N\",\"text\":\"Roof Binoculars for sale.
+      50% off.\"}]", "type": "text"}], "role": "tool", "tool_call_id": "call_BEKppwsR49pPwBsL8DnVUg37"},
+      {"content": null, "role": "assistant", "tool_calls": [{"function": {"arguments":
+      "{\"product_id\": \"2ZYFJ3GM2N\"}", "name": "get_product"}, "id": "call_5tIylUOjfwCxCEhI6LX1RDup",
+      "type": "function"}]}, {"content": [{"text": "{\"id\":\"2ZYFJ3GM2N\",\"name\":\"Roof
+      Binoculars\",\"description\":\"This versatile, all-around binocular is a great
+      choice for the trail, the stadium, the arena, or just about anywhere you want
+      a close-up view of the action without sacrificing brightness or detail. It''s
+      an especially great companion for nature observation and bird watching, with
+      ED glass that helps you spot the subtlest field markings and a close focus of
+      just 6.5 feet.\",\"picture\":\"RoofBinoculars.jpg\",\"priceUsd\":{\"currencyCode\":\"USD\",\"units\":209,\"nanos\":950000000},\"categories\":[\"binoculars\"]}",
+      "type": "text"}], "role": "tool", "tool_call_id": "call_5tIylUOjfwCxCEhI6LX1RDup"}],
+      "model": "gpt-5-nano", "stream": false, "tools": [{"function": {"description":
+      "Add a product (product_id) to the shopping cart for a user (user_id).", "name":
+      "add_to_cart", "parameters": {"additionalProperties": false, "properties": {"product_id":
+      {"type": "string"}, "quantity": {"default": 1, "type": "integer"}, "user_id":
+      {"type": "string"}}, "required": ["user_id", "product_id"], "type": "object"}},
+      "type": "function"}, {"function": {"description": "Checkout the user''s cart
+      and create an order.\nTakes request in the format {string user_id, string userCurrency,
+      Address address, string email, CreditCardInfo creditCard}\nWhere Address is
+      {string streetAddress, string city, string state, string country, string zipCode}
+      and\nCreditCardInfo is {string creditCardNumber, int32 creditCardCvv, int32
+      creditCardExpirationYear, int32 creditCardExpirationMonth}", "name": "checkout",
+      "parameters": {"additionalProperties": false, "properties": {"checkout_person":
+      {}}, "required": ["checkout_person"], "type": "object"}}, "type": "function"},
+      {"function": {"description": "Empty the shopping cart for a user.", "name":
+      "empty_cart", "parameters": {"additionalProperties": false, "properties": {"user_id":
+      {"type": "string"}}, "required": ["user_id"], "type": "object"}}, "type": "function"},
+      {"function": {"description": "Fetch promotional ads for Astronomy Shop homepage.\nEg
+      : category: `telescopes` or `travel`", "name": "get_ads", "parameters": {"additionalProperties":
+      false, "properties": {"category": {"type": "string"}}, "required": ["category"],
+      "type": "object"}}, "type": "function"}, {"function": {"description": "Retrieve
+      the current contents of a user''s cart.", "name": "get_cart", "parameters":
+      {"additionalProperties": false, "properties": {"user_id": {"type": "string"}},
+      "required": ["user_id"], "type": "object"}}, "type": "function"}, {"function":
+      {"description": "Get detailed information about a product using its ID.", "name":
+      "get_product", "parameters": {"additionalProperties": false, "properties": {"product_id":
+      {"type": "string"}}, "required": ["product_id"], "type": "object"}}, "type":
+      "function"}, {"function": {"description": "Get product recommendations for a
+      user.", "name": "get_recommendations", "parameters": {"additionalProperties":
+      false, "properties": {"product_id": {"type": "string"}}, "required": ["product_id"],
+      "type": "object"}}, "type": "function"}, {"function": {"description": "Get estimated
+      shipping cost for a given address.\n`items`: list of {productId, quantity} (a
+      single dict is also accepted).\n`currency_code`: ISO 4217 code, e.g. \"USD\".\n`address`:
+      {streetAddress, city, state, country, zipCode}.", "name": "get_shipping_quote",
+      "parameters": {"additionalProperties": false, "properties": {"address": {},
+      "currency_code": {}, "items": {}}, "required": ["items", "currency_code", "address"],
+      "type": "object"}}, "type": "function"}, {"function": {"description": "List
+      supported currencies in Astronomy Shop.", "name": "get_supported_currencies",
+      "parameters": {"additionalProperties": false, "properties": {}, "type": "object"}},
+      "type": "function"}, {"function": {"description": "List all products available
+      in the Astronomy Shop.", "name": "list_products", "parameters": {"additionalProperties":
+      false, "properties": {}, "type": "object"}}, "type": "function"}]}'
+    headers: {}
+    method: POST
+    uri: https://vcr.local/
+  response:
+    body:
+      string: '{"choices": [{"finish_reason": "stop", "index": 0, "message": {"content":
+        "- Promotion found for binoculars: Roof Binoculars are on sale with 50% off.
+        This promo links to product 2ZYFJ3GM2N.\n- Product details: Roof Binoculars
+        (ID: 2ZYFJ3GM2N), price USD 209.95.\n- If the 50% off promo applies, the sale
+        price would be about USD 104.98.\n- Promo link: /product/2ZYFJ3GM2N\n\nWould
+        you like me to add the Roof Binoculars to your cart at the sale price (if
+        active) or check for other binoculars promos?", "refusal": null, "role": "assistant"}}],
+        "created": 0, "id": "chatcmpl-fixture", "model": "gpt-5-nano-2025-08-07",
+        "object": "chat.completion", "usage": {"completion_tokens": 1293, "completion_tokens_details":
+        {"accepted_prediction_tokens": 0, "audio_tokens": 0, "reasoning_tokens": 1152,
+        "rejected_prediction_tokens": 0}, "prompt_tokens": 761, "prompt_tokens_details":
+        {"audio_tokens": 0, "cached_tokens": 0}, "total_tokens": 2054}}'
+    headers: {}
+    status:
+      code: 200
+      message: OK
+version: 1
